@@ -1,0 +1,33 @@
+---
+title: "Inspect time series in Ceará"
+author: "JM Delgado"
+date: "`r Sys.Date()`"
+output:
+  slidy_presentation:
+    duration: 5    
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+library(assimReservoirs,warn.conflicts=FALSE)
+library(dplyr,warn.conflicts=FALSE)
+library(lubridate,warn.conflicts=FALSE)
+library(sf,warn.conflicts=FALSE)
+
+hymet %>%
+  select(date,id,runoff) %>%
+  filter(date==ymd('2000-01-01')) %>%
+  plot
+
+
+
+
+```
