@@ -123,8 +123,6 @@ plot(Vsubgraph)
 
 ```{r}
 
-
-
 vertices = V(Vsubgraph)  
 
 res_subgraph = filter(res_max,res_max$id_jrc %in% vertices$name)
