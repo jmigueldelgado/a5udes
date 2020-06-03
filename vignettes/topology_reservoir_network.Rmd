@@ -28,7 +28,7 @@ library(ggplot2,warn.conflicts=FALSE)
 # Global datasets of rivers and reservoirs
 
 ```{r echo=FALSE, out.width='70%', fig.align='center', fig.cap="Topological complexity"}
-knitr::include_graphics('/home/delgado/proj/assimReservoirs/screenshot.png')
+knitr::include_graphics('/home/delgado/proj/a5udes/screenshot.png')
 ```
 ---
 
@@ -94,14 +94,17 @@ head(reservoir_graph)
 
 ### Small example with reservoir 34560
 
-Identify adjacent reservoirs upstream of 34560:
+*Example 1:* Identify adjacent reservoirs upstream of 34560:
 
 ```{r, results='asis'}
 id='34560'
 neighbors(reservoir_graph,id,'in')
 ```
 
-Identify all reservoirs upstream of 34560:
+---
+
+
+*Example 2:* Identify all reservoirs upstream of 34560:
 
 ```{r}
 sub=all_simple_paths(reservoir_graph,from=id,mode='in') %>%
@@ -109,12 +112,18 @@ sub=all_simple_paths(reservoir_graph,from=id,mode='in') %>%
   unique
 
 Vsubgraph = induced_subgraph(reservoir_graph, sub ,impl='auto')
+
+plot(Vsubgraph)
 ```
 
-...and plot:
+---
+
+
+...and plot georreferenced reservoirs:
 
 ```{r}
-plot(Vsubgraph)
+
+
 
 vertices = V(Vsubgraph)  
 

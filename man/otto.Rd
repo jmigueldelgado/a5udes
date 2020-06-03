@@ -4,9 +4,7 @@
 \name{otto}
 \alias{otto}
 \title{Otto-basins level 12 for Ceará}
-\format{
-An object of class \code{sf} (inherits from \code{data.frame}) with 1235 rows and 14 columns.
-}
+\format{An object of class \code{sf} (inherits from \code{data.frame}) with 1235 rows and 14 columns.}
 \source{
 https://hydrosheds.org/downloads
 }
