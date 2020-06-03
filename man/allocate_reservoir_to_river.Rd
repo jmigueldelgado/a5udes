@@ -7,7 +7,7 @@
 allocate_reservoir_to_river(riv_i)
 }
 \arguments{
-\item{riv_i}{a subset of river reaches from \code{data(riv)}}
+\item{riv_i}{a subset of river reaches from \code{data(river_geometry)}}
 }
 \value{
 reservoir_geometry_subset subset of the reservoir data frame with the respective attributed river reach and distance to river reach

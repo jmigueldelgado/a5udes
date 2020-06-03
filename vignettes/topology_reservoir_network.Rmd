@@ -41,9 +41,8 @@ We use HydroSHEDS as a consistent global river dataset. The resolution is about 
 ### For example in Ceará:
 
 ```{r, results='asis'}
-plot(riv["UP_CELLS"])
-
-# ggplot(riv) + geom_sf(aes(color=UP_CELLS))
+plot(river_geometry["UP_CELLS"])
+# ggplot(river_geometry) + geom_sf(aes(color=UP_CELLS))
 
 ```
 
@@ -54,7 +53,7 @@ plot(riv["UP_CELLS"])
 Since the river network dataset of HydroSHEDS has valid topology, we can operate on it with package `igraph`, using graph theory. We can for example obtain __all disjoint components of the graph__:
 
 ```{r}
-riv_split = split_river_network(riv)
+riv_split = split_river_network(river_geometry)
 plot(riv_split["membership"])
 
 split_river_network
@@ -79,9 +78,9 @@ We use the JRC global surface water dataset.
 
 Resolution is 30 m. We run
 
-- `allocate_reservoir_to_river(riv)`,
-- `Routing_strat()` and
-- `Routing_non_strat()`
+- `allocate_reservoir_to_river(riv_jagua)`, with e.g. `riv_jagua` obtained in the previous step;
+- `route_reservoir_along_river(reservoir_geometry_subset)`; and
+- `route_reservoir_to_river(reservoir_geometry_subset)`
 
 in advance in order to create a graph. Then we can obtain any subgraph of choice.
 
@@ -125,13 +124,13 @@ plot(Vsubgraph)
 
 vertices = V(Vsubgraph)  
 
-res_subgraph = filter(res_max,res_max$id_jrc %in% vertices$name)
+res_subset = filter(reservoir_geometry,reservoir_geometry$id_jrc %in% vertices$name)
 
-reach_id = filter(res_subgraph,`id_jrc`==id) %>%
+reach_id = filter(res_subset,`id_jrc`==id) %>%
   pull(`nearest river`)
-riv_upstr=river_upstream(reach_id,riv,river_graph)
+riv_upstr=river_upstream(reach_id,river_geometry,river_graph)
 
-res_subgraph %>%
+res_subset %>%
   mutate(`nearest river`=as.factor(`nearest river`)) %>%
   ggplot(.) +
     geom_sf(aes(color=`nearest river`)) +

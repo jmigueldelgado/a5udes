@@ -7,7 +7,7 @@
 select_disjoint_river(reach_id, riv_all)
 }
 \arguments{
-\item{reach_id}{an integer obtained from columne \code{ARCID} of \code{data(riv)}}
+\item{reach_id}{an integer obtained from columne \code{ARCID} of \code{data(river_geometry)}}
 
 \item{riv_all}{a list of disjoint river networks obtained from \code{split_river_network()}.}
 }

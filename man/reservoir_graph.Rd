@@ -4,7 +4,9 @@
 \name{reservoir_graph}
 \alias{reservoir_graph}
 \title{A graph of the class \code{igraph}: routing of strategic and non-strategic reservoirs in Ceará.}
-\format{An object of class \code{igraph} of length 10.}
+\format{
+An object of class \code{igraph} of length 10.
+}
 \source{
 https://hydrosheds.org/downloads
 

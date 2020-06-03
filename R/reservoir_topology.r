@@ -1,65 +1,17 @@
 
 
 
-#' Obtain graph nodes from HydroSheds river network
-#'
-#' Extract the nodes of the HydroSheds river network.
-#' @param riv a sf dataframe with a topologicaly valid river network. Each linestrings is ordered from upstream (first point of the linestring) to downstream (last point of the linestring), just like in the HydroSheds dataset
-#' @return nodes a sf dataframe of points marking the nodes of the river network defined as the inlet of each river reach.
-#' @importFrom sf st_geometry_type st_line_sample st_linestring st_cast
-#' @importFrom dplyr filter
-#' @importFrom magrittr %>% %<>%
-#' @export
-riv2nodes <- function(riv){
-
-  nodes=riv
-  for(i in seq(1,nrow(nodes)))
-  {
-    if(st_geometry_type(riv[i,])=='LINESTRING')
-    {
-      nodes$geometry[i]=st_line_sample(riv[i,],sample=0)
-    }
-    else
-    {
-      nodes$geometry[i]=st_linestring()
-    }
-  }
-
-  valid=st_geometry_type(nodes)=='MULTIPOINT'
-
-  nodes %<>%
-    filter(valid) %>%
-    st_cast(., "POINT", group_or_split = FALSE)
-
-  return(nodes)
-}
-
-#' Calculate graph object based on river network
-#' @param nodes_i a sf dataframe of points marking the nodes of the river network defined as the inlet of each river reach. This must be only one tree. It won't work with a forest.
-#' @param riv_i a sf dataframe with a topologicaly valid river network. This must be only one tree. It won't work with a forest.
-#' @return g a igraph object
-#' @importFrom sf st_touches
-#' @importFrom igraph graph.adjlist components
-#' @export
-riv2graph <- function(nodes_i,riv_i){
-  touch=st_touches(nodes_i,riv_i)
-  for(i in seq(1,length(touch))){
-    touch[[i]]=setdiff(touch[[i]],i)
-  }
-  g=graph.adjlist(touch, mode='in')
-  return(g)
-}
 
 
 
 #' Allocate each reservoir to nearest river reach within a given subbasin
-#' @param riv_i a subset of river reaches from `data(riv)`
+#' @param riv_i a subset of river reaches from `data(river_geometry)`
 #' @return reservoir_geometry_subset subset of the reservoir data frame with the respective attributed river reach and distance to river reach
 #' @importFrom sf st_nearest_feature
 #' @export
 allocate_reservoir_to_river <- function(riv_i)
 {
-  otto_subset = st_intersects(otto,st_union(riv_i),sparse=FALSE) %>% filter(otto,.)
+  otto_subset = st_intersects(catchment_geometry,st_union(riv_i),sparse=FALSE) %>% filter(catchment_geometry,.)
   reservoir_geometry_subset = st_intersects(reservoir_geometry,st_union(otto_subset),sparse=FALSE) %>% filter(reservoir_geometry,.)
   reservoir_geometry_subset = mutate(reservoir_geometry_subset,`nearest river`=NA,`distance to river`=NA)
   for(i in seq(1,nrow(reservoir_geometry_subset)))
@@ -70,7 +22,7 @@ allocate_reservoir_to_river <- function(riv_i)
 
     if(nrow(riv_inters)==0)
     {
-      otto_k=st_intersects(otto,reservoir_geometry_subset[i,],sparse=FALSE) %>% filter(otto,.)
+      otto_k=st_intersects(catchment_geometry,reservoir_geometry_subset[i,],sparse=FALSE) %>% filter(catchment_geometry,.)
       riv_k = st_buffer(otto_k,-1000) %>%
       st_union %>%
       st_intersects(riv_i,.,sparse=FALSE) %>%
@@ -115,9 +67,9 @@ route_reservoir_to_river <- function(reservoir_geometry_subset){
 
     if(nrow(strat_downstr)==0){
 
-      riv_downstr <- all_simple_paths(g,from=rownames(riv[riv$ARCID==non_strat$`nearest river`[n],]),mode='out') %>%
+      riv_downstr <- all_simple_paths(g,from=rownames(river_geometry[river_geometry$ARCID==non_strat$`nearest river`[n],]),mode='out') %>%
         unlist %>% unique
-      riv_l <- riv[riv_downstr,]
+      riv_l <- river_geometry[riv_downstr,]
       strat_downstr <- subset(strategic, `nearest river` %in% riv_l$ARCID)
     }
 
@@ -159,7 +111,7 @@ route_reservoir_along_river <- function(reservoir_geometry_subset){
 
     riv_downstr <- all_simple_paths(g,from=leaves[l],mode='out') %>%
     unlist %>% unique
-    riv_l <- riv[riv_downstr,]
+    riv_l <- river_geometry[riv_downstr,]
     strat_downstr <- subset(strategic, `nearest river` %in% riv_l$ARCID)
 
     if(nrow(strat_downstr) > 1){
@@ -182,7 +134,7 @@ route_reservoir_along_river <- function(reservoir_geometry_subset){
   multiple_res <- reservoir_geometry_subset[reservoir_geometry_subset$`nearest river` %in% dup$`nearest river` & reservoir_geometry_subset$`distance to river`==0,]
 
   for(d in 1:length(unique(dup$`nearest river`))){
-    riv_l <- riv[riv$ARCID==dup$`nearest river`[d],]
+    riv_l <- river_geometry[river_geometry$ARCID==dup$`nearest river`[d],]
     strat_downstr <- subset(multiple_res, `nearest river` == riv_l$ARCID)
 
     points <- st_line_sample(riv_l, n = 200)

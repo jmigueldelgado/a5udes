@@ -8,24 +8,24 @@
 "reservoir_geometry"
 
 
-#' Otto-basins level 12 for Ceará
+#' Catchments of Otto-level 12 for Ceará
 #'
 #' @docType data
-#' @usage data(otto)
+#' @usage data(catchment_geometry)
 #'
 #' @references Lehner, B., Verdin, K., Jarvis, A. (2008): New global hydrography derived from spaceborne elevation data. Eos, Transactions, AGU, 89(10): 93-94.
 #' @source https://hydrosheds.org/downloads
-"otto"
+"catchment_geometry"
 
 
 #' River network with upstream cell number for Ceará
 #'
 #' @docType data
-#' @usage data(riv)
+#' @usage data(river_geometry)
 #'
 #' @references Lehner, B., Verdin, K., Jarvis, A. (2008): New global hydrography derived from spaceborne elevation data. Eos, Transactions, AGU, 89(10): 93-94.
 #' @source https://hydrosheds.org/downloads
-"riv"
+"river_geometry"
 
 #' Nodes of the river network with upstream cell number for Ceará. Can be computed with `riv2nodes`
 #'
@@ -48,11 +48,11 @@
 #' A graph of the class `igraph` containing flow direction for the HydroSHEDS subbasin dataset in Ceará.
 #'
 #' @docType data
-#' @usage data(otto_graph)
+#' @usage data(catchment_graph)
 #'
 #' @references Lehner, B., Verdin, K., Jarvis, A. (2008): New global hydrography derived from spaceborne elevation data. Eos, Transactions, AGU, 89(10): 93-94.
 #' @source https://hydrosheds.org/downloads
-"otto_graph"
+"catchment_graph"
 
 
 #' A graph of the class `igraph`: routing of strategic and non-strategic reservoirs in Ceará.

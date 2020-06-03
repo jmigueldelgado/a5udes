@@ -7,9 +7,9 @@
 river_upstream(reach_id, riv_i, graph)
 }
 \arguments{
-\item{reach_id}{from \code{data(riv)}}
+\item{reach_id}{from \code{data(river_geometry)}}
 
-\item{riv_i}{a subset of river reaches from \code{data(riv)}}
+\item{riv_i}{a subset of river reaches of class sf from \code{data(river_geometry)}}
 
 \item{graph}{a graph of class igraph produced with \code{riv2graph()}}
 }
