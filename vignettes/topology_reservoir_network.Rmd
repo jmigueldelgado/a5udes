@@ -97,7 +97,30 @@ head(reservoir_graph)
 
 ```{r, results='asis'}
 id='34560'
-neighbors(reservoir_graph,id,'in')
+adj_subgraph=make_ego_graph(reservoir_graph, order = 1, nodes = id, mode = "in", mindist = 0)
+plot(adj_subgraph[[1]])
+```
+
+---
+
+...and plot them on a georreferenced map:
+
+```{r, results='asis'}
+
+
+adj=neighbors(reservoir_graph,id,"in")
+res_adj=filter(reservoir_geometry,id_jrc %in% adj$name)
+res_id=filter(reservoir_geometry,id_jrc %in% id)
+
+
+
+ind=st_combine(res_adj) %>% st_convex_hull %>% st_intersects(river_geometry)
+river_subset=river_geometry[ind[[1]],]
+
+ggplot() +
+  geom_sf(data=res_adj,color='darkblue',fill='darkblue') +
+  geom_sf(data=res_id,color='red',fill='red') +
+  geom_sf(data=river_subset,color='black',size=0.1)
 ```
 
 ---
@@ -118,7 +141,7 @@ plot(Vsubgraph)
 ---
 
 
-...and plot georreferenced reservoirs:
+...and plot them on a georreferenced map:
 
 ```{r}
 

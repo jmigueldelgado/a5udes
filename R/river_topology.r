@@ -60,7 +60,7 @@ riv2graph <- function(nodes_i,riv_i){
 #' @importFrom magrittr %>%
 #' @export
 split_river_network <- function(riv){
-  touching_list=st_touches(riv)
+  # touching_list=st_touches(riv)
   adjacency_list=st_touches(riv)
 
   # g = graph.adjlist(touching_list)
