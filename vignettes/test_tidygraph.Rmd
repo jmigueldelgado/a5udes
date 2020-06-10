@@ -1,0 +1,62 @@
+---
+title: "Testing tidygraph: map_bfs()"
+author: "JM Delgado"
+date: "`r Sys.Date()`"
+output:
+  slidy_presentation:
+    duration: 5    
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+library(dplyr,warn.conflicts=FALSE)
+library(tidygraph,warn.conflicts=FALSE)
+library(ggraph,warn.conflicts=FALSE)
+library(a5udes)
+library(igraph)
+
+```
+
+```{r, results='asis'}
+id='44755' # oros
+
+id='34560' # smaller network
+id='34689' # even smaller
+
+sub=all_simple_paths(reservoir_graph,from=id,mode='in') %>%
+  unlist %>%
+  unique
+
+subgraph = induced_subgraph(reservoir_graph, sub ,impl='auto')
+
+
+graph=subgraph %>% as_tbl_graph %>% activate('nodes') %>%
+  mutate(value=1) %>%
+  mutate(value_acc = map_bfs_back_dbl(node_is_leaf(), .f = function(node, path, ...) {
+    sum(.N()$value[c(node, path$node)])
+  }))
+
+
+
+graph=create_tree(40, children = 3, directed = TRUE,mode='out') %>%  
+  set_vertex_attr("label",value=seq(1,40)) %>%
+  mutate(value = 2 )%>%
+  mutate(value_acc = map_bfs_back_dbl(node_is_root(), .f = function(node, path, ...) {
+    sum(.N()$value[c(node, path$node)])
+    }))
+
+graph %>% as_tibble %>% pull(value_acc) %>% max
+
+ggraph(graph) +
+  geom_node_point(aes(size=value_acc)) +
+  geom_edge_bend2()
+
+```
