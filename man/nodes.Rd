@@ -4,9 +4,7 @@
 \name{nodes}
 \alias{nodes}
 \title{Nodes of the river network with upstream cell number for Ceará. Can be computed with \code{riv2nodes}}
-\format{
-An object of class \code{sf} (inherits from \code{data.frame}) with 3773 rows and 3 columns.
-}
+\format{An object of class \code{sf} (inherits from \code{data.frame}) with 3773 rows and 3 columns.}
 \source{
 https://hydrosheds.org/downloads
 }
