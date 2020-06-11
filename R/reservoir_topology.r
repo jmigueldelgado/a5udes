@@ -6,13 +6,14 @@
 
 #' Allocate each reservoir to nearest river reach within a given subbasin
 #' @param riv_i a subset of river reaches from `data(river_geometry)`
+#' @param reservoirs a set of polygons or multipolygons of class `sf` to be matched with the river network. Defaults to the northeast Brazil reservoir dataset
 #' @return reservoir_geometry_subset subset of the reservoir data frame with the respective attributed river reach and distance to river reach
 #' @importFrom sf st_nearest_feature
 #' @export
-allocate_reservoir_to_river <- function(riv_i)
+allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 {
   otto_subset = st_intersects(catchment_geometry,st_union(riv_i),sparse=FALSE) %>% filter(catchment_geometry,.)
-  reservoir_geometry_subset = st_intersects(reservoir_geometry,st_union(otto_subset),sparse=FALSE) %>% filter(reservoir_geometry,.)
+  reservoir_geometry_subset = st_intersects(reservoirs,st_union(otto_subset),sparse=FALSE) %>% filter(reservoirs,.)
   reservoir_geometry_subset = mutate(reservoir_geometry_subset,`nearest river`=NA,`distance to river`=NA)
   for(i in seq(1,nrow(reservoir_geometry_subset)))
   {

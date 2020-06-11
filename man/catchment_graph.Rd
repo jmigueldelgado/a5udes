@@ -4,9 +4,7 @@
 \name{catchment_graph}
 \alias{catchment_graph}
 \title{A graph of the class \code{igraph} containing flow direction for the HydroSHEDS subbasin dataset in Ceará.}
-\format{
-An object of class \code{igraph} of length 10.
-}
+\format{An object of class \code{igraph} of length 10.}
 \source{
 https://hydrosheds.org/downloads
 }
