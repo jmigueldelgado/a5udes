@@ -19,7 +19,7 @@ riv2nodes <- function(riv){
     }
     else
     {
-      nodes$geometry[i]=st_linestring()
+      nodes$geometry[i]=st_point()
     }
   }
 
@@ -41,11 +41,13 @@ riv2nodes <- function(riv){
 #' @importFrom igraph graph.adjlist components
 #' @export
 riv2graph <- function(nodes_i,riv_i){
-  touch=st_touches(nodes_i,riv_i)
-  for(i in seq(1,length(touch))){
-    touch[[i]]=setdiff(touch[[i]],i)
-  }
-  g=graph.adjlist(touch, mode='in')
+  touch=st_touches(nodes_i,riv_i,sparse=FALSE)
+  rownames(touch)=nodes_i$ARCID
+  colnames(touch)=riv_i$ARCID
+  diag(touch)=FALSE
+
+  g=graph_from_adjacency_matrix(t(touch), mode='directed')
+
   return(g)
 }
 
