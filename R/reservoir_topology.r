@@ -58,7 +58,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 #' @export
 route_reservoir_along_river <- function(res_geom,riv_geom=river_geometry,riv_graph){
   res_geom$res_down <- NA
-  strategic_df <- st_set_geometry(strategic,NULL) %>%
+  strategic_df <- st_set_geometry(res_geom,NULL) %>%
     filter(`distance to river`==0) %>%
     select(id_jrc,`nearest river`,`distance to river`,res_down)
 
@@ -70,30 +70,25 @@ route_reservoir_along_river <- function(res_geom,riv_geom=river_geometry,riv_gra
     names(.)
 
   res_on_paths=list()
-  for(l in 1:length(leaves)){
+  for(l in seq(1:length(leaves))){
 
-    if(l %in% c(500,1000,1500)){print(paste(Sys.time(),l, "of", length(leaves), "leaves done"))}
-
-    # get path from given leaf to root
     riv_downstr <- all_simple_paths(g,from=leaves[l],mode='out') %>%
       unlist %>% names(.) %>% unique
     riv_l <- riv_df %>% filter(ARCID %in% riv_downstr)
 
-    # get all reservoirs on this path and sort them according to UP_CELLS
     res_on_paths[[l]] = inner_join(strategic_df,riv_l,by=c('nearest river'='ARCID')) %>%
       arrange(desc(UP_CELLS)) %>%
       mutate(res_down=lag(id_jrc)) %>%
       select(id_jrc,res_down)
   }
 
-  # first step in attributing upstream-downstream relationship: following UP_CELLS
   tmp=bind_rows(res_on_paths) %>% distinct(id_jrc,.keep_all=TRUE)
+
   res_geom=left_join(res_geom,tmp,by='id_jrc') %>%
     mutate(res_down=coalesce(res_down.x,res_down.y)) %>%
     select(-res_down.x,-res_down.y)
 
 # for-loop through river reaches with multiple reservoirs ####
-  print(paste(Sys.time(), "start correcting order where multiple reservoirs on one river reach"))
   dup <- strategic_df[which(duplicated(strategic_df$`nearest river`)),]
   multiple_res <- res_geom[res_geom$`nearest river` %in% dup$`nearest river` & res_geom$`distance to river`==0,]
 
