@@ -12,7 +12,7 @@ allocate_reservoir_to_river(riv_i, reservoirs = reservoir_geometry)
 \item{reservoirs}{a set of polygons or multipolygons of class \code{sf} to be matched with the river network. Defaults to the northeast Brazil reservoir dataset}
 }
 \value{
-reservoir_geometry_subset subset of the reservoir data frame with the respective attributed river reach and distance to river reach
+res_geom subset of the reservoir data frame with the respective attributed river reach and distance to river reach
 }
 \description{
 Allocate each reservoir to nearest river reach within a given subbasin

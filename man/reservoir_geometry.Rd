@@ -4,7 +4,9 @@
 \name{reservoir_geometry}
 \alias{reservoir_geometry}
 \title{Geometry of reservoirs in Ceará}
-\format{An object of class \code{sf} (inherits from \code{data.frame}) with 22911 rows and 13 columns.}
+\format{
+An object of class \code{sf} (inherits from \code{data.frame}) with 22911 rows and 13 columns.
+}
 \source{
 https://global-surface-water.appspot.com/download
 }

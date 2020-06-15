@@ -57,27 +57,62 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 #' @importFrom dplyr %>%
 #' @export
 route_reservoir_along_river <- function(res_geom,riv_geom=river_geometry,riv_graph){
+
   res_geom$res_down <- NA
   strategic_df <- st_set_geometry(res_geom,NULL) %>%
     filter(`distance to river`==0) %>%
     select(id_jrc,`nearest river`,`distance to river`,res_down)
 
+  dups = strategic_df %>% group_by(`nearest river`) %>% filter(n()>1) %>% ungroup
+  riv_reach = dups %>%
+    distinct(`nearest river`) %>%
+    rename(ARCID=`nearest river`) %>%
+    left_join(riv_geom,by.y=ARCID,by.x=`nearest river`) %>%
+    st_set_geometry('geometry') %>%
+    st_set_crs(st_crs(riv_geom))
+
+  res_in_reach=list()
+
+  for(d in seq(1,nrow(riv_reach))){
+
+      riv_l = riv_reach[d,]
+
+      strat_downstr = res_geom %>% filter(`nearest river` == riv_l$ARCID)
+      strat_downstr_df=st_set_geometry(strat_downstr,NULL)
+      points <- st_line_sample(riv_l, n = 1000) %>%
+        st_cast("POINT") %>%
+        st_sf()
+      inter <- st_intersects(strat_downstr, points)
+
+      r=list()
+      for(i in seq(1,length(inter))){
+        if(length(inter[[i]]>0)){
+          r[[i]] <- strat_downstr_df[i,] %>% mutate(sample_max=max(inter[[i]]))
+        }
+      }
+      res_in_reach[[d]]=bind_rows(r) %>%
+        filter(is.finite(sample_max))
+  }
+
+  res_in_reach=bind_rows(res_in_reach)
+
   riv_df=st_set_geometry(riv_geom,NULL)
 
-# for-loop through leaves ####
   g <- riv_graph
   leaves = which(degree(g, v = V(g), mode = "in")==0) %>%
     names(.)
 
+
   res_on_paths=list()
+
   for(l in seq(1:length(leaves))){
 
     riv_downstr <- all_simple_paths(g,from=leaves[l],mode='out') %>%
       unlist %>% names(.) %>% unique
     riv_l <- riv_df %>% filter(ARCID %in% riv_downstr)
 
-    res_on_paths[[l]] = inner_join(strategic_df,riv_l,by=c('nearest river'='ARCID')) %>%
-      arrange(desc(UP_CELLS)) %>%
+    res_on_paths[[l]] = inner_join(res_in_reach,riv_l,by=c('nearest river'='ARCID')) %>%
+      arrange(desc(UP_CELLS),desc(sample_max)) %>%
       mutate(res_down=lag(id_jrc)) %>%
       select(id_jrc,res_down)
   }
@@ -88,38 +123,6 @@ route_reservoir_along_river <- function(res_geom,riv_geom=river_geometry,riv_gra
     mutate(res_down=coalesce(res_down.x,res_down.y)) %>%
     select(-res_down.x,-res_down.y)
 
-# for-loop through river reaches with multiple reservoirs ####
-  dup <- strategic_df[which(duplicated(strategic_df$`nearest river`)),]
-  multiple_res <- res_geom[res_geom$`nearest river` %in% dup$`nearest river` & res_geom$`distance to river`==0,]
-
-  for(d in 1:length(unique(dup$`nearest river`))){
-    riv_l <- river_geometry[river_geometry$ARCID==dup$`nearest river`[d],]
-    strat_downstr <- subset(multiple_res, `nearest river` == riv_l$ARCID)
-
-    points <- st_line_sample(riv_l, n = 200)
-    points <- st_cast(points, "POINT")
-    points <- st_sf(points)
-    points$sample <- 1:200
-    points <- st_buffer(points, dist = 100)
-
-    inter <- st_intersection(strat_downstr, points)
-    r <- data.frame(id_jrc = unique(inter$id_jrc))
-
-    for(i in 1:nrow(r)){
-      r$sample_max[i] <- max(inter$sample[inter$id_jrc== r$id_jrc[i]])
-    }
-# correct res_down in res_geom for this river reach
-    res_geom$res_down[res_geom$id_jrc==r$id_jrc[nrow(r)]] <- strat_downstr$res_down[!(strat_downstr$res_down %in% strat_downstr$id_jrc)]
-    res_geom$res_down[res_geom$res_down %in% strat_downstr$id_jrc] <- r$id_jrc[1]
-
-    for(i in 1:(nrow(r)-1)){
-      res_geom$res_down[res_geom$id_jrc==r$id_jrc[i]] <- r$id_jrc[i+1]
-    }
-  }
-
-  res_geom$res_down[is.na(res_geom$res_down)] <- -1
-
-  print(paste(Sys.time(), "finished!"))
   return(res_geom)
 }
 

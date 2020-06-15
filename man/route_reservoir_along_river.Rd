@@ -4,13 +4,17 @@
 \alias{route_reservoir_along_river}
 \title{Routing reservoirs across the river network}
 \usage{
-route_reservoir_along_river(reservoir_geometry_subset)
+route_reservoir_along_river(res_geom, riv_geom = river_geometry, riv_graph)
 }
 \arguments{
-\item{reservoir_geometry_subset}{is  a subset \code{data(reservoir_geometry)} that can be obtained from the function \code{allocate_reservoir_to_river()}}
+\item{res_geom}{is  a subset of \code{data(reservoir_geometry)} that can be obtained from the function \code{allocate_reservoir_to_river()}}
+
+\item{riv_geom}{is a river geometry possibly created with created with \code{select_disjoint_river()}}
+
+\item{riv_graph}{is a river graph created with \code{riv2graph()} based on riv_geom}
 }
 \value{
-the column \code{res_down} in the geospatial dataframe \code{reservoir_geometry_subset}
+the column \code{res_down} in the geospatial dataframe \code{res_geom}
 }
 \description{
 This function identifies which reservoirs are part of the river network and which reservoir do they drain into

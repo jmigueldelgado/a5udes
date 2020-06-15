@@ -4,10 +4,10 @@
 \alias{route_reservoir_to_river}
 \title{Routing reservoirs to the river network}
 \usage{
-route_reservoir_to_river(reservoir_geometry_subset)
+route_reservoir_to_river(res_geom)
 }
 \arguments{
-\item{reservoir_geometry_subset}{is  a subset \code{data(reservoir_geometry)} that can be obtained from the function \code{allocate_reservoir_to_river()}}
+\item{res_geom}{is  a subset \code{data(reservoir_geometry)} that can be obtained from the function \code{allocate_reservoir_to_river()}}
 }
 \value{
 completes the column \code{res_down} in the geospatial dataframe \code{reservoir_geometry}
