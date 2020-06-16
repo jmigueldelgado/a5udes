@@ -4,7 +4,8 @@
 \alias{route_reservoir_along_river}
 \title{Routing reservoirs across the river network}
 \usage{
-route_reservoir_along_river(res_geom, riv_geom = river_geometry, riv_graph)
+route_reservoir_along_river(res_geom, riv_geom = river_geometry,
+  riv_graph)
 }
 \arguments{
 \item{res_geom}{is  a subset of \code{data(reservoir_geometry)} that can be obtained from the function \code{allocate_reservoir_to_river()}}

@@ -45,7 +45,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 
 
 
-#' Routing reservoirs across the river network
+#' create_reservoir_topology
 #'
 #' This function identifies which reservoirs are part of the river network and which reservoir do they drain into
 #' @param res_geom is  a subset of `data(reservoir_geometry)` that can be obtained from the function `allocate_reservoir_to_river()`
@@ -56,118 +56,102 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 #' @importFrom igraph all_simple_paths degree V
 #' @importFrom dplyr %>%
 #' @export
-route_reservoir_along_river <- function(res_geom,riv_geom=river_geometry,riv_graph){
+create_reservoir_topology = function(res_geom,riv_graph,riv_geom){
 
   res_geom$res_down <- NA
-  strategic_df <- st_set_geometry(res_geom,NULL) %>%
-    filter(`distance to river`==0) %>%
-    select(id_jrc,`nearest river`,`distance to river`,res_down)
+  res_geom$downstreamness <- NA
+  res_geom$UP_CELLS <- NA
 
-  dups = strategic_df %>% group_by(`nearest river`) %>% filter(n()>1) %>% ungroup
-  riv_reach = dups %>%
-    distinct(`nearest river`) %>%
-    rename(ARCID=`nearest river`) %>%
-    left_join(riv_geom,by.y=ARCID,by.x=`nearest river`) %>%
-    st_set_geometry('geometry') %>%
-    st_set_crs(st_crs(riv_geom))
+  res_geom_topo = res_geom %>% select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness)
 
-  res_in_reach=list()
+  res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(keep=TRUE)
 
-  for(d in seq(1,nrow(riv_reach))){
+  i=1
+  for(i in seq(1,length(res_geom_list))){
+    strategic = res_geom_list[[i]] %>% filter(`distance to river`==0)
+    non_strategic = res_geom_list[[i]] %>% filter(`distance to river`>0)
 
-      riv_l = riv_reach[d,]
-
-      strat_downstr = res_geom %>% filter(`nearest river` == riv_l$ARCID)
-      strat_downstr_df=st_set_geometry(strat_downstr,NULL)
-      points <- st_line_sample(riv_l, n = 1000) %>%
-        st_cast("POINT") %>%
-        st_sf()
-      inter <- st_intersects(strat_downstr, points)
-
-      r=list()
-      for(i in seq(1,length(inter))){
-        if(length(inter[[i]]>0)){
-          r[[i]] <- strat_downstr_df[i,] %>% mutate(sample_max=max(inter[[i]]))
-        }
-      }
-      res_in_reach[[d]]=bind_rows(r) %>%
-        filter(is.finite(sample_max))
+    riv_l=filter(riv_geom,ARCID==res_geom_list[[i]]$`nearest river`[1])
+    if(nrow(strategic)>1){
+      strategic_df=sort_n_strategic(strategic,riv_l)
+      non_strategic_df=sort_non_strategic(strategic,non_strategic,riv_l)
+    } else if(nrow(strategic)==1) {
+      strategic_df=sort_1_strategic(strategic,riv_l)
+      non_strategic_df=sort_non_strategic(strategic,non_strategic,riv_l)
+    } else if(nrow(strategic)==0) {
+        strategic_df = st_set_geometry(strategic,NULL)
+        non_strategic_df = st_set_geometry(non_strategic,NULL) %>%
+          mutate(UP_CELLS=riv_l$UP_CELLS[1])
+    }
+    res_geom_list[[i]]=bind_rows(strategic_df,non_strategic_df)
   }
 
-  res_in_reach=bind_rows(res_in_reach)
 
-  riv_df=st_set_geometry(riv_geom,NULL)
+  res_all=bind_rows(res_geom_list)
 
-  g <- riv_graph
-  leaves = which(degree(g, v = V(g), mode = "in")==0) %>%
+  strategic_nas=res_all %>% filter(is.na(res_down)) %>% filter(`distance to river`==0)
+  non_strategic_nas=res_all %>% filter(is.na(res_down)) %>% filter(`distance to river`>0)
+
+  leaves = which(degree(riv_graph, v = V(riv_graph), mode = "in")==0) %>%
     names(.)
 
-
-  res_on_paths=list()
+  res_nas_filled=list()
 
   for(l in seq(1:length(leaves))){
 
-    riv_downstr <- all_simple_paths(g,from=leaves[l],mode='out') %>%
+    riv_downstr <- all_simple_paths(riv_graph,from=leaves[l],mode='out') %>%
       unlist %>% names(.) %>% unique
-    riv_l <- riv_df %>% filter(ARCID %in% riv_downstr)
 
-    res_on_paths[[l]] = inner_join(res_in_reach,riv_l,by=c('nearest river'='ARCID')) %>%
-      arrange(desc(UP_CELLS),desc(sample_max)) %>%
-      mutate(res_down=lag(id_jrc)) %>%
-      select(id_jrc,res_down)
+    strategic_df = strategic_nas %>%
+      arrange(UP_CELLS,downstreamness) %>%
+      mutate(res_down=lead(id_jrc))
+
+    res_nas_filled[[l]] = bind_rows(strategic_df,non_strategic_nas) %>%
+      arrange(UP_CELLS,downstreamness) %>%
+      tidyr::fill(res_down,.direction='up')
   }
 
-  tmp=bind_rows(res_on_paths) %>% distinct(id_jrc,.keep_all=TRUE)
-
-  res_geom=left_join(res_geom,tmp,by='id_jrc') %>%
+  res_topo=bind_rows(res_nas_filled) %>%
+    right_join(res_all,by='id_jrc') %>%
     mutate(res_down=coalesce(res_down.x,res_down.y)) %>%
-    select(-res_down.x,-res_down.y)
-
-  return(res_geom)
-}
+    select(id_jrc,res_down)
 
 
 
-#' Routing reservoirs to the river network
-#'
-#' This function identifies which reservoir is outside the river network and which river reach is closer and within the same catchment
-#' @param res_geom is  a subset `data(reservoir_geometry)` that can be obtained from the function `allocate_reservoir_to_river()`
-#' @return completes the column ```res_down``` in the geospatial dataframe ```reservoir_geometry```
-#' @importFrom sf st_distance
-#' @importFrom igraph all_simple_paths
-#' @importFrom dplyr %>%
-#' @export
+  sort_non_strategic = function(strategic,non_strategic,riv_l){
+    upcells=riv_l$UP_CELLS[1]
+    nn=st_nearest_feature(non_strategic,strategic)
+    strat_ids=strategic_df %>% slice(nn) %>% pull(id_jrc)
+    strategic_df = st_set_geometry(strategic,NULL)
+    non_strategic_df=st_set_geometry(non_strategic,NULL) %>%
+      mutate(res_down=strat_ids)
 
-route_reservoir_to_river <- function(res_geom){
-  strategic <- res_geom[res_geom$`distance to river`==0,]
-  non_strat <- res_geom[res_geom$`distance to river`>0,]
-  g <- river_graph
-
-  for(n in 1:nrow(non_strat)){
-
-    if(n %in% c(2500,5000,7500,10000,12500,15000,16000,17500,20000)){
-      print(paste(Sys.time(),n, "reservoirs done"))}
-
-    strat_downstr <- strategic[strategic$`nearest river` %in% non_strat$`nearest river`[n],]
-
-    if(nrow(strat_downstr)==0){
-
-      riv_downstr <- all_simple_paths(g,from=rownames(river_geometry[river_geometry$ARCID==non_strat$`nearest river`[n],]),mode='out') %>%
-        unlist %>% unique
-      riv_l <- river_geometry[riv_downstr,]
-      strat_downstr <- subset(strategic, `nearest river` %in% riv_l$ARCID)
-    }
-
-    if(nrow(strat_downstr)>1){
-      strat_downstr <- strat_downstr[st_distance(strat_downstr, non_strat[n,]) == min(st_distance(strat_downstr, non_strat[n,])),]
-    }
-
-    if(nrow(strat_downstr)==1){
-      res_geom$res_down[res_geom$id_jrc==non_strat$id_jrc[n]] <- strat_downstr$id_jrc
-    }else{
-      res_geom$res_down[res_geom$id_jrc==non_strat$id_jrc[n]] <- NA
-    }
+    return(non_strategic_df)
   }
 
-  return(res_geom)
+  sort_1_strategic = function(strategic,riv_l){
+    upcells=riv_l$UP_CELLS[1]
+    strategic_df=st_set_geometry(strategic,NULL) %>%
+      mutate(UP_CELLS=upcells)
+
+    return(strategic_df)
+  }
+
+  sort_n_strategic = function(strategic,riv_l){
+    upcells=riv_l$UP_CELLS[1]
+    strategic_df=st_set_geometry(strategic,NULL)
+    points <- st_line_sample(riv_l, n = 1000) %>%
+      st_cast("POINT") %>%
+      st_sf()
+    inter <- st_intersects(strategic, points)
+
+    for(i in seq(1,length(inter))){
+      if(length(inter[[i]]>0)){
+        strategic_df = strategic_df %>% mutate(downstreamness=ifelse(row_number()==i,max(inter[[i]]),downstreamness),UP_CELLS=upcells)
+      }
+    }
+    return(strategic_df)
+  }
+
+  return(res_topo)
 }
