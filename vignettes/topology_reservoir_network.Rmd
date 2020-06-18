@@ -78,9 +78,8 @@ We use the JRC global surface water dataset.
 
 Resolution is 30 m. We run
 
-- `allocate_reservoir_to_river(riv_jagua)`, with e.g. `riv_jagua` obtained in the previous step;
-- `route_reservoir_along_river(reservoir_geometry_subset)`; and
-- `route_reservoir_to_river(reservoir_geometry_subset)`
+- `allocate_reservoir_to_river(riv_jagua)`, with e.g. `riv_jagua` obtained in the previous step; and
+- `build_reservoir_topology(reservoir_geometry_subset,riv_jagua,riv_graph)`.
 
 in advance in order to create a graph. Then we can obtain any subgraph of choice.
 

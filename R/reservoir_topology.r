@@ -45,24 +45,25 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 
 
 
-#' create_reservoir_topology
+#' Build reservoir topology starting from a river graph, river geometry and reservoir location
 #'
-#' This function identifies which reservoirs are part of the river network and which reservoir do they drain into
+#' This function builds the topology of the reservoir network. It starts by identifying which reservoirs
+#' are located over the river network (strategic reservoirs) and builds their topology by filling the `res_down` column.
+#' Then it looks at reservoirs outside the river network (in general smaller reservoirs and here called non-strategic)
+#' and assigns them to a strategic reservoir (with `sf::st_nearest_feature()`) in case there is one in the river reach
+#' or simply assigns the next downstream strategic reservoir as `res_down`
+#'
 #' @param res_geom is  a subset of `data(reservoir_geometry)` that can be obtained from the function `allocate_reservoir_to_river()`
+#' @param riv_geom is a river geometry that can be created with `select_disjoint_river()`
 #' @param riv_graph is a river graph created with `riv2graph()` based on riv_geom
-#' @param riv_geom is a river geometry possibly created with created with `select_disjoint_river()`
-#' @return the column ```res_down``` in the geospatial dataframe ```res_geom```
-#' @importFrom sf st_line_sample st_cast st_sf st_buffer st_intersection st_write
+#' @return a the column ```res_down``` in the geospatial dataframe ```res_geom```
+#' @importFrom sf st_set_geometry
 #' @importFrom igraph all_simple_paths degree V
-#' @importFrom dplyr %>%
+#' @importFrom dplyr %>% arrange coalesce right_join group_by group_split mutate select filter bind_rows left_join distinct
 #' @export
-create_reservoir_topology = function(res_geom,riv_graph,riv_geom){
+build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
 
-  res_geom$res_down <- NA
-  res_geom$downstreamness <- NA
-  res_geom$UP_CELLS <- NA
-
-  res_geom_topo = res_geom %>% select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness)
+  res_geom_topo = res_geom %>% mutate(res_down=NA,downstreamness=NA,UP_CELLS=NA) %>% select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UP_CELLS)
 
   res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(keep=TRUE)
 
@@ -112,46 +113,77 @@ create_reservoir_topology = function(res_geom,riv_graph,riv_geom){
   }
 
   res_topo=bind_rows(res_nas_filled) %>%
+    distinct(id_jrc,.keep_all=TRUE) %>%
     right_join(res_all,by='id_jrc') %>%
     mutate(res_down=coalesce(res_down.x,res_down.y)) %>%
     select(id_jrc,res_down)
 
+  res_geom_out=left_join(res_geom,select(res_topo,id_jrc,res_down))
+
+  return(res_geom_out)
+}
 
 
-  sort_non_strategic = function(strategic,non_strategic,riv_l){
-    upcells=riv_l$UP_CELLS[1]
-    nn=st_nearest_feature(non_strategic,strategic)
-    strat_ids=strategic_df %>% slice(nn) %>% pull(id_jrc)
-    strategic_df = st_set_geometry(strategic,NULL)
-    non_strategic_df=st_set_geometry(non_strategic,NULL) %>%
-      mutate(res_down=strat_ids)
 
-    return(non_strategic_df)
-  }
+#' Helper function for building topology or reservoirs
+#'
+#' Sorts non-strategic reservoirs by assigning them to nearest strategic whenever there is one
+#'
+#' @param strategic is a group of `res_geom_list` from `build_reservoir_topology()`. It is obtained by grouping by `nearest river`
+#' @param non_strategic is a group of `res_geom_list` from `build_reservoir_topology()`. It is obtained by grouping by `nearest river`
+#' @param riv_l is the river linestring corresponding to the group `res_geom_list` being handled ie the `nearest river`
+#' @return non_strategic_df a dataframe with no geometry attributes with a ```res_down``` column filled where possible
+#' @importFrom sf st_nearest_feature st_set_geometry
+#' @importFrom dplyr %>% slice pull mutate
+#' @export
+sort_non_strategic = function(strategic,non_strategic,riv_l){
+  upcells=riv_l$UP_CELLS[1]
+  nn=st_nearest_feature(non_strategic,strategic)
+  strat_ids=st_set_geometry(strategic,NULL) %>% slice(nn) %>% pull(id_jrc)
+  non_strategic_df=st_set_geometry(non_strategic,NULL) %>%
+    mutate(res_down=strat_ids)
 
-  sort_1_strategic = function(strategic,riv_l){
-    upcells=riv_l$UP_CELLS[1]
-    strategic_df=st_set_geometry(strategic,NULL) %>%
-      mutate(UP_CELLS=upcells)
+  return(non_strategic_df)
+}
 
-    return(strategic_df)
-  }
+#' Helper function for building topology of reservoirs
+#'
+#' Sorts strategic reservoirs whenever there is only one on the river network
+#'
+#' @param strategic is a group of `res_geom_list` from `build_reservoir_topology()`. It is obtained by grouping by `nearest river`
+#' @param riv_l is the river linestring corresponding to the group `res_geom_list` being handled ie the `nearest river`
+#' @return strategic_df a dataframe with no geometry attributes with a ```UP_CELLS``` column filled where possible
+#' @importFrom sf st_set_geometry
+#' @importFrom dplyr %>% mutate
+sort_1_strategic = function(strategic,riv_l){
+  upcells=riv_l$UP_CELLS[1]
+  strategic_df=st_set_geometry(strategic,NULL) %>%
+    mutate(UP_CELLS=upcells)
 
-  sort_n_strategic = function(strategic,riv_l){
-    upcells=riv_l$UP_CELLS[1]
-    strategic_df=st_set_geometry(strategic,NULL)
-    points <- st_line_sample(riv_l, n = 1000) %>%
-      st_cast("POINT") %>%
-      st_sf()
-    inter <- st_intersects(strategic, points)
+  return(strategic_df)
+}
 
-    for(i in seq(1,length(inter))){
-      if(length(inter[[i]]>0)){
-        strategic_df = strategic_df %>% mutate(downstreamness=ifelse(row_number()==i,max(inter[[i]]),downstreamness),UP_CELLS=upcells)
-      }
+#' Helper function for building topology of reservoirs
+#'
+#' Sorts strategic reservoirs whenever there is more than one on the river network
+#'
+#' @param strategic is a group of `res_geom_list` from `build_reservoir_topology()`. It is obtained by grouping by `nearest river`
+#' @param riv_l is the river linestring corresponding to the group `res_geom_list` being handled ie the `nearest river`
+#' @return strategic_df a dataframe with no geometry attributes with a ```downstreamness``` and `UP_CELLS` column filled where possible
+#' @importFrom sf st_set_geometry st_line_sample st_cast st_sf st_intersects
+#' @importFrom dplyr %>% mutate row_number
+sort_n_strategic = function(strategic,riv_l){
+  upcells=riv_l$UP_CELLS[1]
+  strategic_df=st_set_geometry(strategic,NULL)
+  points <- st_line_sample(riv_l, n = 1000) %>%
+    st_cast("POINT") %>%
+    st_sf()
+  inter <- st_intersects(strategic, points)
+
+  for(i in seq(1,length(inter))){
+    if(length(inter[[i]]>0)){
+      strategic_df = strategic_df %>% mutate(downstreamness=ifelse(row_number()==i,max(inter[[i]]),downstreamness),UP_CELLS=upcells)
     }
-    return(strategic_df)
   }
-
-  return(res_topo)
+  return(strategic_df)
 }
