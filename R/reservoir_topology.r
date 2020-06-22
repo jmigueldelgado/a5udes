@@ -63,11 +63,13 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 #' @export
 build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
 
+  # add downstreamness (sorting within catchment) and UPCELLS (sorting across catchments) columns
   res_geom_topo = res_geom %>% mutate(res_down=NA,downstreamness=NA,UP_CELLS=NA) %>% select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UP_CELLS)
 
+  # group after nearest river reach ID
   res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(keep=TRUE)
 
-  i=1
+  # loop on river reach ID
   for(i in seq(1,length(res_geom_list))){
     strategic = res_geom_list[[i]] %>% filter(`distance to river`==0)
     non_strategic = res_geom_list[[i]] %>% filter(`distance to river`>0)
@@ -90,9 +92,6 @@ build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
 
   res_all=bind_rows(res_geom_list)
 
-  strategic_nas=res_all %>% filter(is.na(res_down)) %>% filter(`distance to river`==0)
-  non_strategic_nas=res_all %>% filter(is.na(res_down)) %>% filter(`distance to river`>0)
-
   leaves = which(degree(riv_graph, v = V(riv_graph), mode = "in")==0) %>%
     names(.)
 
@@ -103,13 +102,22 @@ build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
     riv_downstr <- all_simple_paths(riv_graph,from=leaves[l],mode='out') %>%
       unlist %>% names(.) %>% unique
 
+    strategic_nas=res_all %>%
+      filter(`nearest river` %in% as.integer(riv_downstr)) %>%
+      filter(is.na(res_down)) %>%
+      filter(`distance to river`==0)
+
+    non_strategic_df=res_all %>%
+      filter(`nearest river` %in% as.integer(riv_downstr)) %>%
+      filter(`distance to river`>0) %>%
+      arrange(UP_CELLS,downstreamness) %>%
+      tidyr::fill(res_down,.direction='up')
+
     strategic_df = strategic_nas %>%
       arrange(UP_CELLS,downstreamness) %>%
       mutate(res_down=lead(id_jrc))
 
-    res_nas_filled[[l]] = bind_rows(strategic_df,non_strategic_nas) %>%
-      arrange(UP_CELLS,downstreamness) %>%
-      tidyr::fill(res_down,.direction='up')
+    res_nas_filled[[l]] = bind_rows(strategic_df,non_strategic_df)
   }
 
   res_topo=bind_rows(res_nas_filled) %>%
@@ -118,7 +126,7 @@ build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
     mutate(res_down=coalesce(res_down.x,res_down.y)) %>%
     select(id_jrc,res_down)
 
-  res_geom_out=left_join(res_geom,select(res_topo,id_jrc,res_down))
+  res_geom_out=left_join(res_geom,res_topo)
 
   return(res_geom_out)
 }

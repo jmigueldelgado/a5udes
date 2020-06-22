@@ -7,11 +7,11 @@
 sort_non_strategic(strategic, non_strategic, riv_l)
 }
 \arguments{
-\item{strategic}{is a group of \code{res_geom_list} from \code{build_reservoir_topology()}. It is obtained by grouping by \code{nearest river}}
+\item{strategic}{is a group of \code{res_geom_list} from \code{build_reservoir_topology()}. It is obtained by grouping by \verb{nearest river}}
 
-\item{non_strategic}{is a group of \code{res_geom_list} from \code{build_reservoir_topology()}. It is obtained by grouping by \code{nearest river}}
+\item{non_strategic}{is a group of \code{res_geom_list} from \code{build_reservoir_topology()}. It is obtained by grouping by \verb{nearest river}}
 
-\item{riv_l}{is the river linestring corresponding to the group \code{res_geom_list} being handled ie the \code{nearest river}}
+\item{riv_l}{is the river linestring corresponding to the group \code{res_geom_list} being handled ie the \verb{nearest river}}
 }
 \value{
 non_strategic_df a dataframe with no geometry attributes with a \code{res_down} column filled where possible
