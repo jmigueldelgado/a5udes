@@ -18,8 +18,12 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
   for(i in seq(1,nrow(res_geom)))
   {
     riv_inters <- st_intersects(res_geom[i,],riv_i,sparse=FALSE) %>%
-      filter(riv_i,.) %>%
-      filter(UP_CELLS==max(UP_CELLS))
+      filter(riv_i,.)
+
+    # if reservoir intersects a river junction assume the downstreammost river reach as the nearest river
+    if(nrow(riv_inters)>1) {
+      riv_inters=riv_inters %>% filter(UP_CELLS==max(UP_CELLS))
+    }
 
     if(nrow(riv_inters)==0)
     {
