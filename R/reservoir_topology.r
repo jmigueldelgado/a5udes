@@ -44,7 +44,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
       res_geom$`distance to river`[i] = 0
     }
   }
-  return(res_geom)
+  return(res_geom %>% filter(!is.na(`nearest river`)))
 }
 
 
@@ -71,7 +71,7 @@ build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
   res_geom_topo = res_geom %>% mutate(res_down=NA,downstreamness=NA,UP_CELLS=NA) %>% select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UP_CELLS)
 
   # group after nearest river reach ID
-  res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(keep=TRUE)
+  res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(.keep=TRUE)
 
   # loop on river reach ID
   for(i in seq(1,length(res_geom_list))){
