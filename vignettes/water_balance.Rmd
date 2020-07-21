@@ -44,7 +44,7 @@ ggraph(g) +
 
 ---
 
-With a reservoir graph upstream of oros:
+With a reservoir graph upstream of Orós:
 
 ```{r, results='asis'}
 
