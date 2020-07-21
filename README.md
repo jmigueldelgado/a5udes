@@ -1,10 +1,3 @@
 # a5udes
 
-Some useful igraph functions:
-
-https://igraph.org/r/doc/dfs.html
-
-https://igraph.org/r/doc/topo_sort.html
-
-https://igraph.org/r/doc/subgraph.html
-
+![alt text](https://github.com/jmigueldelgado/a5udes/blob/master/image.jpg?raw=true)
