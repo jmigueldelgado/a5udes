@@ -1,5 +1,5 @@
 ---
-title: "Testing tidygraph: map_dfs()"
+title: "Water balance and routing overspill"
 author: "JM Delgado"
 date: "`r Sys.Date()`"
 output:
@@ -42,6 +42,8 @@ ggraph(g) +
   geom_edge_link0(arrow = arrow(length = unit(4, 'mm')))
 ```
 
+---
+
 With a reservoir graph upstream of oros:
 
 ```{r, results='asis'}
@@ -58,39 +60,39 @@ sub=all_simple_paths(reservoir_graph,from=id,mode='in') %>%
 
 subgraph = induced_subgraph(reservoir_graph, sub ,impl='auto')
 
-graph.reverse <- function (graph) {
-  if (!is.directed(graph))
-    return(graph)
-  e <- get.data.frame(graph, what="edges")
-  ## swap "from" & "to"
-  neworder <- 1:length(e)
-  neworder[1:2] <- c(2,1)
-  e <- e[neworder]
-  names(e) <- names(e)[neworder]
-  graph.data.frame(e, vertices = get.data.frame(graph, what="vertices"))
-}
-
 g=subgraph %>%
-  graph.reverse(.) %>%
+  graph_reverse_direction(.) %>%
   as_tbl_graph %>% mutate(rank=map_dfs_back_int(node_is_root(),.f=function(node,rank,...) {
     return(rank)  
   }))
 
 ggraph(g) +
   geom_node_point() +
-  geom_node_label(aes(label = rank)) +# repel=TRUE
+  geom_node_label(aes(label = name)) +# repel=TRUE
   geom_edge_link0(arrow = arrow(length = unit(4, 'mm')))
 ```
 
-Route overspill:
+---
 
-1. define size of each node's dataframe by determining how many upstream nodes are there. Reserve memory for this.
-2. loop on rank
-3. on each node do a water balance and pass results downstream
+Water balance and route overspill:
+
+1. define neighborhood dataframe
+```{r, results='asis'}
+neigh = g %>% activate(nodes) %>%
+  arrange(desc(rank)) %>%
+  mutate(neighborhood =   local_members(order = 1,mode='out',mindist=1)) %>%
+  as_tibble
+```
+2. define state dataframe (with current state of reservoirs -- volume, incoming runoff, maximum volume and overspill)
+```{r, results='asis'}
+state = g %>% activate(nodes) %>%
+  arrange(desc(rank)) %>%
+  mutate(max_volume=1,volume=0.8,incoming_runoff=0.3,overspill=0) %>%
+  as_tibble
+```
+
+3. on each reservoir do a water balance and pass results downstream
 
 ```{r, results='asis'}
-
-g %>% activate(nodes) %>% arrange(desc(rank)) %>% as_tibble
-
-
+water_balance(neigh,state) %>% knitr::kable(.)
 ```

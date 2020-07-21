@@ -1,7 +1,20 @@
-
-
-
-
+#' Reverse the edge direction of a directed graph
+#' @param graph a igraph directed graph
+#' @return reversed a graph with reversed direction
+#' @importFrom igraph is.directed get.data.frame
+#' @export
+graph_reverse_direction <- function (graph) {
+  if (!is.directed(graph))
+    return(graph)
+  e <- get.data.frame(graph, what="edges")
+  ## swap "from" & "to"
+  neworder <- 1:length(e)
+  neworder[1:2] <- c(2,1)
+  e <- e[neworder]
+  names(e) <- names(e)[neworder]
+  reversed=graph.data.frame(e, vertices = get.data.frame(graph, what="vertices"))
+  return(reversed)
+}
 
 
 #' Allocate each reservoir to nearest river reach within a given subbasin
