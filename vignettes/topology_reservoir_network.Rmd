@@ -88,6 +88,21 @@ head(reservoir_graph)
 
 ```
 
+If you wish to pass attributes to the reservoir graph using tidygraph makes it very easy. For example passing the attribute `area_max` to the graph:
+
+```{r}
+library(tidygraph)
+res_area=reservoir_geometry %>%
+  st_set_geometry(NULL) %>%
+  select(id_jrc,area_max) %>%
+  rename(name=id_jrc)
+
+reservoir_tidygraph = reservoir_tidygraph %>%
+  activate(nodes) %>%
+  mutate(name=as.integer(name)) %>%
+  left_join(res_area)
+```
+
 ---
 
 ### Small example with reservoir 34560

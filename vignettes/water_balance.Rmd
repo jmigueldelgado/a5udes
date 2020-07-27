@@ -21,7 +21,7 @@ library(dplyr,warn.conflicts=FALSE)
 library(tidygraph,warn.conflicts=FALSE)
 library(ggraph,warn.conflicts=FALSE)
 library(igraph)
-
+library(a5udes)
 ```
 
 With a generic graph:
@@ -48,7 +48,6 @@ With a reservoir graph upstream of Orós:
 
 ```{r, results='asis'}
 
-library(a5udes)
 
 # id='44755' # oros
 id='34560' # smaller network
@@ -76,7 +75,7 @@ ggraph(g) +
 
 Water balance and route overspill:
 
-1. define neighborhood dataframe
+1. define neighborhood dataframe (with upstream reservoirs and upstream area)
 ```{r, results='asis'}
 neigh = g %>% activate(nodes) %>%
   arrange(desc(rank)) %>%
@@ -87,7 +86,7 @@ neigh = g %>% activate(nodes) %>%
 ```{r, results='asis'}
 state = g %>% activate(nodes) %>%
   arrange(desc(rank)) %>%
-  mutate(max_volume=1,volume=0.8,incoming_runoff=0.3,overspill=0) %>%
+  mutate(max_volume=1,volume=0.8,incoming_runoff=0.3,overspill=0,evap=0.1) %>%
   as_tibble
 ```
 
@@ -95,4 +94,10 @@ state = g %>% activate(nodes) %>%
 
 ```{r, results='asis'}
 water_balance(neigh,state) %>% knitr::kable(.)
+```
+
+
+```{r}
+reservoir_geometry %>% names
+
 ```

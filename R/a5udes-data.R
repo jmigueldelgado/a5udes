@@ -63,3 +63,12 @@
 #' @source https://hydrosheds.org/downloads
 #' @source https://global-surface-water.appspot.com/download
 "reservoir_graph"
+
+#' A graph of the class `tidygraph`. Good for manipulating attributes of reservoirs as a graph.
+#'
+#' @docType data
+#' @usage data(reservoir_tidygraph)
+#'
+#' @source https://hydrosheds.org/downloads
+#' @source https://global-surface-water.appspot.com/download
+"reservoir_tidygraph"

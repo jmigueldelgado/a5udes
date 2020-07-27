@@ -73,7 +73,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 #' @param res_geom is  a subset of `data(reservoir_geometry)` that can be obtained from the function `allocate_reservoir_to_river()`
 #' @param riv_geom is a river geometry that can be created with `select_disjoint_river()`
 #' @param riv_graph is a river graph created with `riv2graph()` based on riv_geom
-#' @return a the column ```res_down``` in the geospatial dataframe ```res_geom```
+#' @return the column ```res_down``` in the geospatial dataframe ```res_geom```
 #' @importFrom sf st_set_geometry
 #' @importFrom igraph all_simple_paths degree V
 #' @importFrom dplyr %>% arrange coalesce right_join group_by group_split mutate select filter bind_rows left_join distinct
@@ -81,7 +81,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
 
   # add downstreamness (sorting within catchment) and UPCELLS (sorting across catchments) columns
-  res_geom_topo = res_geom %>% mutate(res_down=NA,downstreamness=NA,UP_CELLS=NA) %>% select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UP_CELLS)
+  res_geom_topo = res_geom %>% mutate(res_down=NA,downstreamness=NA,UP_CELLS=NA) %>% select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UP_CELLS,area_max)
 
   # group after nearest river reach ID
   res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(.keep=TRUE)
@@ -207,7 +207,14 @@ sort_n_strategic = function(strategic,riv_l){
 
   for(i in seq(1,length(inter))){
     if(length(inter[[i]]>0)){
-      strategic_df = strategic_df %>% mutate(downstreamness=ifelse(row_number()==i,max(inter[[i]]),downstreamness),UP_CELLS=upcells)
+      strategic_df = strategic_df %>%
+        mutate(
+          downstreamness=ifelse(
+            row_number()==i,
+            max(inter[[i]]),
+            downstreamness
+            ),
+          UP_CELLS=upcells)
     }
   }
   return(strategic_df)

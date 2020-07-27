@@ -2,7 +2,7 @@
 % Please edit documentation in R/routing.R
 \name{water_balance}
 \alias{water_balance}
-\title{Calculate the water balance and route downstream}
+\title{Calculate the water balance and route downstream. Order must be given previously by rank with \code{arrange(desc(rank))}.}
 \usage{
 water_balance(neigh, state)
 }
@@ -15,5 +15,5 @@ water_balance(neigh, state)
 state the state of the reservoir after water balance concluded
 }
 \description{
-Calculate the water balance and route downstream
+Calculate the water balance and route downstream. Order must be given previously by rank with \code{arrange(desc(rank))}.
 }
