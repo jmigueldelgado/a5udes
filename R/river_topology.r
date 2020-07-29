@@ -42,8 +42,8 @@ riv2nodes <- function(riv){
 #' @export
 riv2graph <- function(nodes_i,riv_i){
   touch=st_touches(nodes_i,riv_i,sparse=FALSE)
-  rownames(touch)=nodes_i$ARCID
-  colnames(touch)=riv_i$ARCID
+  rownames(touch)=nodes_i$HYRIV_ID
+  colnames(touch)=riv_i$HYRIV_ID
   diag(touch)=FALSE
 
   g=graph_from_adjacency_matrix(t(touch), mode='directed')
@@ -75,14 +75,14 @@ split_river_network <- function(riv){
 }
 
 #' Select disjoint river network from set of river networks based on reach id
-#' @param reach_id an integer obtained from columne `ARCID` of `data(river_geometry)`
+#' @param reach_id an integer obtained from columne `UPLAND_SKM` of `data(river_geometry)`
 #' @param riv_all a list of disjoint river networks obtained from `split_river_network()`.
 #' @return riv_i a disjoint river network
 #' @importFrom dplyr filter pull
 #' @export
 select_disjoint_river <- function(reach_id,riv_all)
 {
-  riverid=filter(riv_all,ARCID==reach_id) %>% pull(membership)
+  riverid=filter(riv_all,HYRIV_ID==reach_id) %>% pull(membership)
   riv_i = filter(riv_all,membership==riverid)
   return(riv_i)
 }
@@ -98,12 +98,12 @@ select_disjoint_river <- function(reach_id,riv_all)
 #' @export
 river_upstream <- function(reach_id,riv_i,graph)
 {
-  riv_upstr = which(riv_i$ARCID==reach_id) %>%
+  riv_upstr = which(riv_i$HYRIV_ID==reach_id) %>%
     all_simple_paths(graph,from=.,mode='in') %>%
     unlist %>%
     unique %>%
     slice(riv_i,.)
-  list_upstr = which(riv_i$ARCID==reach_id) %>%
+  list_upstr = which(riv_i$HYRIV_ID==reach_id) %>%
     all_simple_paths(graph,from=.,mode='in')
 
   if(length(list_upstr)>0)
@@ -114,7 +114,7 @@ river_upstream <- function(reach_id,riv_i,graph)
       slice(riv_i,.)
   } else
   {
-    riv_upstr = filter(riv_i,ARCID==reach_id)
+    riv_upstr = filter(riv_i,HYRIV_ID==reach_id)
   }
 
   return(riv_upstr)

@@ -35,7 +35,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 
     # if reservoir intersects a river junction assume the downstreammost river reach as the nearest river
     if(nrow(riv_inters)>1) {
-      riv_inters=riv_inters %>% filter(UP_CELLS==max(UP_CELLS))
+      riv_inters=riv_inters %>% filter(UPLAND_SKM==max(UPLAND_SKM))
     }
 
     if(nrow(riv_inters)==0)
@@ -48,12 +48,12 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 
       if(nrow(riv_k)>0){
         res_geom$`nearest river`[i] = st_nearest_feature(res_geom[i,],riv_k) %>%
-        riv_k$ARCID[.]
+        riv_k$HYRIV_ID[.]
 
-        res_geom$`distance to river`[i] = st_distance(res_geom[i,],filter(riv_k,ARCID==res_geom$`nearest river`[i]))
+        res_geom$`distance to river`[i] = st_distance(res_geom[i,],filter(riv_k,HYRIV_ID==res_geom$`nearest river`[i]))
       }
     } else {
-      res_geom$`nearest river`[i] = riv_inters$ARCID
+      res_geom$`nearest river`[i] = riv_inters$HYRIV_ID
       res_geom$`distance to river`[i] = 0
     }
   }
@@ -80,8 +80,8 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
 #' @export
 build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
 
-  # add downstreamness (sorting within catchment) and UPCELLS (sorting across catchments) columns
-  res_geom_topo = res_geom %>% mutate(res_down=NA,downstreamness=NA,UP_CELLS=NA) %>% select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UP_CELLS,area_max)
+  # add downstreamness (sorting within catchment) and UPLAND_SKM (sorting across catchments) columns
+  res_geom_topo = res_geom %>% mutate(res_down=NA,downstreamness=NA,UPLAND_SKM=NA) %>% select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UPLAND_SKM,area_max)
 
   # group after nearest river reach ID
   res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(.keep=TRUE)
@@ -91,7 +91,7 @@ build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
     strategic = res_geom_list[[i]] %>% filter(`distance to river`==0)
     non_strategic = res_geom_list[[i]] %>% filter(`distance to river`>0)
 
-    riv_l=filter(riv_geom,ARCID==res_geom_list[[i]]$`nearest river`[1])
+    riv_l=filter(riv_geom,HYRIV_ID==res_geom_list[[i]]$`nearest river`[1])
     if(nrow(strategic)>1){
       strategic_df=sort_n_strategic(strategic,riv_l)
       non_strategic_df=sort_non_strategic(strategic,non_strategic,riv_l)
@@ -101,7 +101,7 @@ build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
     } else if(nrow(strategic)==0) {
         strategic_df = st_set_geometry(strategic,NULL)
         non_strategic_df = st_set_geometry(non_strategic,NULL) %>%
-          mutate(UP_CELLS=riv_l$UP_CELLS[1])
+          mutate(UPLAND_SKM=riv_l$UPLAND_SKM[1])
     }
     res_geom_list[[i]]=bind_rows(strategic_df,non_strategic_df)
   }
@@ -127,11 +127,11 @@ build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
     non_strategic_df=res_all %>%
       filter(`nearest river` %in% as.integer(riv_downstr)) %>%
       filter(`distance to river`>0) %>%
-      arrange(UP_CELLS,downstreamness) %>%
+      arrange(UPLAND_SKM,downstreamness) %>%
       tidyr::fill(res_down,.direction='up')
 
     strategic_df = strategic_nas %>%
-      arrange(UP_CELLS,downstreamness) %>%
+      arrange(UPLAND_SKM,downstreamness) %>%
       mutate(res_down=lead(id_jrc))
 
     res_nas_filled[[l]] = bind_rows(strategic_df,non_strategic_df)
@@ -162,7 +162,7 @@ build_reservoir_topology = function(res_geom,riv_geom,riv_graph){
 #' @importFrom dplyr %>% slice pull mutate
 #' @export
 sort_non_strategic = function(strategic,non_strategic,riv_l){
-  upcells=riv_l$UP_CELLS[1]
+  upcells=riv_l$UPLAND_SKM[1]
   nn=st_nearest_feature(non_strategic,strategic)
   strat_ids=st_set_geometry(strategic,NULL) %>% slice(nn) %>% pull(id_jrc)
   non_strategic_df=st_set_geometry(non_strategic,NULL) %>%
@@ -181,9 +181,9 @@ sort_non_strategic = function(strategic,non_strategic,riv_l){
 #' @importFrom sf st_set_geometry
 #' @importFrom dplyr %>% mutate
 sort_1_strategic = function(strategic,riv_l){
-  upcells=riv_l$UP_CELLS[1]
+  upcells=riv_l$UPLAND_SKM[1]
   strategic_df=st_set_geometry(strategic,NULL) %>%
-    mutate(UP_CELLS=upcells)
+    mutate(UPLAND_SKM=upcells)
 
   return(strategic_df)
 }
@@ -198,7 +198,7 @@ sort_1_strategic = function(strategic,riv_l){
 #' @importFrom sf st_set_geometry st_line_sample st_cast st_sf st_intersects
 #' @importFrom dplyr %>% mutate row_number
 sort_n_strategic = function(strategic,riv_l){
-  upcells=riv_l$UP_CELLS[1]
+  upcells=riv_l$UPLAND_SKM[1]
   strategic_df=st_set_geometry(strategic,NULL)
   points <- st_line_sample(riv_l, n = 1000) %>%
     st_cast("POINT") %>%
@@ -214,7 +214,7 @@ sort_n_strategic = function(strategic,riv_l){
             max(inter[[i]]),
             downstreamness
             ),
-          UP_CELLS=upcells)
+          UPLAND_SKM=upcells)
     }
   }
   return(strategic_df)
