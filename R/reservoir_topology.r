@@ -66,7 +66,8 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry,catc
 
   geom_ls = res_geom %>% dplyr::select(id_jrc) %>% purrr::transpose
   if("furrr" %in% (.packages())){
-      map_out=geom_ls %>% future_map(get_nearest_and_id)
+    plan(multiprocess)
+    map_out=geom_ls %>% future_map(get_nearest_and_id)
   } else {
       map_out=geom_ls %>% map(get_nearest_and_id)
   }
@@ -76,7 +77,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry,catc
     left_join(res_geom) %>%
     filter(!is.na(`nearest river`)) %>%
     return
-    
+
 }
 
 
