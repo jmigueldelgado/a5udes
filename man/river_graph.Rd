@@ -5,7 +5,7 @@
 \alias{river_graph}
 \title{A graph of the class \code{igraph} containing flow direction for the HydroSHEDS river network dataset in Ceará.}
 \format{
-An object of class \code{igraph} of length 10.
+An object of class \code{tbl_graph} (inherits from \code{igraph}) of length 10.
 }
 \source{
 https://hydrosheds.org/downloads

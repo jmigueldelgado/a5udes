@@ -21,43 +21,62 @@ graph_reverse_direction <- function (graph) {
 #' @param riv_i a subset of river reaches from `data(river_geometry)`
 #' @param reservoirs a set of polygons or multipolygons of class `sf` to be matched with the river network. Defaults to the northeast Brazil reservoir dataset
 #' @return res_geom subset of the reservoir data frame with the respective attributed river reach and distance to river reach
-#' @importFrom sf st_nearest_feature
+#' @importFrom sf st_nearest_feature st_intersects st_filter st_buffer st_distance
+#' @importFrom progress progress_bar
+#' @importFrom dplyr filter mutate tibble left_join bind_rows
+#' @importFrom purrr map
+#' @importFrom furrr future_map
 #' @export
-allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry)
+allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry,catchments=catchment_geometry)
 {
-  otto_subset = st_intersects(catchment_geometry,st_union(riv_i),sparse=FALSE) %>% filter(catchment_geometry,.)
+  print('preparing data for analysis and filtering out catchments and reservoir outside river network\n')
+  otto_subset = st_intersects(catchments,st_union(riv_i),sparse=FALSE) %>% filter(catchments,.)
   res_geom = st_intersects(reservoirs,st_union(otto_subset),sparse=FALSE) %>% filter(reservoirs,.)
-  res_geom = mutate(res_geom,`nearest river`=NA,`distance to river`=NA)
-  for(i in seq(1,nrow(res_geom)))
-  {
-    riv_inters <- st_intersects(res_geom[i,],riv_i,sparse=FALSE) %>%
-      filter(riv_i,.)
 
-    # if reservoir intersects a river junction assume the downstreammost river reach as the nearest river
+  pb <- progress_bar$new(total = nrow(res_geom))
+
+  get_nearest_and_id = function(id_and_geom) {
+
+    pb$tick()
+    Sys.sleep(0.1)
+    geom=id_and_geom$geometry %>% st_sfc(.,crs=st_crs(res_geom))
+    riv_inters = riv_i %>% st_filter(geom)
     if(nrow(riv_inters)>1) {
       riv_inters=riv_inters %>% filter(UPLAND_SKM==max(UPLAND_SKM))
     }
 
-    if(nrow(riv_inters)==0)
-    {
-      otto_k=st_intersects(catchment_geometry,res_geom[i,],sparse=FALSE) %>% filter(catchment_geometry,.)
+    if(nrow(riv_inters)==0) {
+      otto_k = otto_subset %>% st_filter(geom)
       riv_k = st_buffer(otto_k,-1000) %>%
-      st_union %>%
-      st_intersects(riv_i,.,sparse=FALSE) %>%
-      filter(riv_i,.)
+        st_union %>%
+        st_intersects(riv_i,.,sparse=FALSE) %>%
+        filter(riv_i,.)
 
       if(nrow(riv_k)>0){
-        res_geom$`nearest river`[i] = st_nearest_feature(res_geom[i,],riv_k) %>%
-        riv_k$HYRIV_ID[.]
-
-        res_geom$`distance to river`[i] = st_distance(res_geom[i,],filter(riv_k,HYRIV_ID==res_geom$`nearest river`[i]))
+        nearest_riv = st_nearest_feature(geom,riv_k) %>%
+          riv_k$HYRIV_ID[.]
+        distance2riv = st_distance(geom,filter(riv_k,HYRIV_ID==nearest_riv))
       }
     } else {
-      res_geom$`nearest river`[i] = riv_inters$HYRIV_ID
-      res_geom$`distance to river`[i] = 0
+      nearest_riv = riv_inters$HYRIV_ID
+      distance2riv = 0
     }
+    return(tibble(id_jrc=id_and_geom$id_jrc,`nearest river`=nearest_riv,`distance to river`=distance2riv))
   }
-  return(res_geom %>% filter(!is.na(`nearest river`)))
+
+  geom_ls = res_geom %>% dplyr::select(id_jrc) %>% purrr::transpose
+  if("furrr" %in% (.packages())){
+      map_out=geom_ls %>% future_map(get_nearest_and_id)
+  } else {
+      map_out=geom_ls %>% map(get_nearest_and_id)
+  }
+
+  map_out %>%
+    bind_rows %>%
+    left_join(res_geom) %>%
+    filter(!is.na(`nearest river`)) %>%
+    return
+    
 }
 
 

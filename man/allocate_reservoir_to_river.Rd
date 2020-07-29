@@ -4,7 +4,11 @@
 \alias{allocate_reservoir_to_river}
 \title{Allocate each reservoir to nearest river reach within a given subbasin}
 \usage{
-allocate_reservoir_to_river(riv_i, reservoirs = reservoir_geometry)
+allocate_reservoir_to_river(
+  riv_i,
+  reservoirs = reservoir_geometry,
+  catchments = catchment_geometry
+)
 }
 \arguments{
 \item{riv_i}{a subset of river reaches from \code{data(river_geometry)}}

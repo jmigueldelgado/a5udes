@@ -14,7 +14,7 @@ build_reservoir_topology(res_geom, riv_geom, riv_graph)
 \item{riv_graph}{is a river graph created with \code{riv2graph()} based on riv_geom}
 }
 \value{
-a the column \code{res_down} in the geospatial dataframe \code{res_geom}
+the column \code{res_down} in the geospatial dataframe \code{res_geom}
 }
 \description{
 This function builds the topology of the reservoir network. It starts by identifying which reservoirs
