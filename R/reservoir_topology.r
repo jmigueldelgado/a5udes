@@ -74,7 +74,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry,catc
 
   map_out %>%
     bind_rows %>%
-    left_join(res_geom) %>%
+    right_join(res_geom) %>%
     filter(!is.na(`nearest river`)) %>%
     return
 
