@@ -55,7 +55,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry,catc
       if(nrow(riv_k)>0){
         nearest_riv = st_nearest_feature(geom,riv_k) %>%
           riv_k$HYRIV_ID[.]
-        distance2riv = st_distance(geom,filter(riv_k,HYRIV_ID==nearest_riv))
+        distance2riv = st_distance(geom,filter(riv_k,HYRIV_ID==nearest_riv)) %>% as.numeric
       }
     } else {
       nearest_riv = riv_inters$HYRIV_ID
@@ -67,7 +67,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry,catc
   geom_ls = res_geom %>% dplyr::select(id_jrc) %>% purrr::transpose(.)
   if("furrr" %in% (.packages())){
     plan(multiprocess)
-    map_out=geom_ls %>% future_map(get_nearest_and_id)
+    map_out=geom_ls %>% future_map(get_nearest_and_id,.progress=TRUE)
   } else {
       map_out=geom_ls %>% map(get_nearest_and_id)
   }
