@@ -4,20 +4,16 @@
 \alias{build_reservoir_topology}
 \title{Build reservoir topology starting from a river graph, river geometry and reservoir location}
 \usage{
-build_reservoir_topology(res_geom, riv_geom, riv_graph)
+build_reservoir_topology(res_geom)
 }
 \arguments{
 \item{res_geom}{is  a subset of \code{data(reservoir_geometry)} that can be obtained from the function \code{allocate_reservoir_to_river()}}
-
-\item{riv_geom}{is a river geometry that can be created with \code{select_disjoint_river()}}
-
-\item{riv_graph}{is a river graph created with \code{riv2graph()} based on riv_geom}
 }
 \value{
 the column \code{res_down} in the geospatial dataframe \code{res_geom}
 }
 \description{
-This function builds the topology of the reservoir network. It starts by identifying which reservoirs
+This function builds the topology of the reservoir network. Depends on \code{data(river_graph)} and \code{data(river_geometry)}. It starts by identifying which reservoirs
 are located over the river network (strategic reservoirs) and builds their topology by filling the \code{res_down} column.
 Then it looks at reservoirs outside the river network (in general smaller reservoirs and here called non-strategic)
 and assigns them to a strategic reservoir (with \code{sf::st_nearest_feature()}) in case there is one in the river reach

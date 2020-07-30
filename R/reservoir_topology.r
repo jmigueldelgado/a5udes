@@ -21,7 +21,7 @@ graph_reverse_direction <- function (graph) {
 #' @param riv_i a subset of river reaches from `data(river_geometry)`
 #' @param reservoirs a set of polygons or multipolygons of class `sf` to be matched with the river network. Defaults to the northeast Brazil reservoir dataset
 #' @return res_geom subset of the reservoir data frame with the respective attributed river reach and distance to river reach
-#' @importFrom sf st_nearest_feature st_intersects st_filter st_buffer st_distance
+#' @importFrom sf st_nearest_feature st_intersects st_filter st_buffer st_distance st_sf
 #' @importFrom progress progress_bar
 #' @importFrom dplyr filter mutate tibble left_join bind_rows
 #' @importFrom purrr map
@@ -76,6 +76,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry,catc
     bind_rows %>%
     right_join(res_geom) %>%
     filter(!is.na(`nearest river`)) %>%
+    st_sf %>%
     return
 
 }

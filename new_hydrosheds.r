@@ -38,11 +38,18 @@ library(furrr)
 
 
 river_graph %>% as.igraph
+res_geom=reservoir_geometry
+
+res_geom_topo = res_geom %>% mutate(res_down=NA,downstreamness=NA,UPLAND_SKM=NA) %>% dplyr::select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UPLAND_SKM,area_max)
+
+# group after nearest river reach ID
+res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(.keep=TRUE)
+
+
 
 
 river_graph
-
-# res_geom=build_reservoir_topology(reservoir_geometry,river_geometry,river_graph)
+res_geom=build_reservoir_topology(reservoir_geometry)
 #
 # reservoir_tidygraph = res_geom %>%
 #   st_set_geometry(NULL) %>%
