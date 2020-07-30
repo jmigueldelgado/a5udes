@@ -32,10 +32,15 @@ library(furrr)
 # river_graph=riv2graph(nodes,river_geometry)
 # save(river_graph,file='data/river_graph.RData')
 
-riv_i=river_geometry
-res_geom=allocate_reservoir_to_river(riv_i)
-save(res_geom,file='res_geom.RData')
+# riv_i=river_geometry
+# reservoir_geometry=allocate_reservoir_to_river(riv_i)
+# save(reservoir_geometry,file='data/reservoir_geometry.RData')
 
+
+river_graph %>% as.igraph
+
+
+river_graph
 
 # res_geom=build_reservoir_topology(reservoir_geometry,river_geometry,river_graph)
 #
