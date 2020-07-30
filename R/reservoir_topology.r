@@ -64,7 +64,7 @@ allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry,catc
     return(tibble(id_jrc=id_and_geom$id_jrc,`nearest river`=nearest_riv,`distance to river`=distance2riv))
   }
 
-  geom_ls = res_geom %>% dplyr::select(id_jrc) %>% purrr::transpose
+  geom_ls = res_geom %>% dplyr::select(id_jrc) %>% purrr::transpose(.)
   if("furrr" %in% (.packages())){
     plan(multiprocess)
     map_out=geom_ls %>% future_map(get_nearest_and_id)
