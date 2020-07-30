@@ -36,20 +36,9 @@ library(furrr)
 # reservoir_geometry=allocate_reservoir_to_river(riv_i)
 # save(reservoir_geometry,file='data/reservoir_geometry.RData')
 
-
-river_graph %>% as.igraph
-res_geom=reservoir_geometry
-
-res_geom_topo = res_geom %>% mutate(res_down=NA,downstreamness=NA,UPLAND_SKM=NA) %>% dplyr::select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UPLAND_SKM,area_max)
-
-# group after nearest river reach ID
-res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(.keep=TRUE)
-
-
-
-
-river_graph
 res_geom=build_reservoir_topology(reservoir_geometry)
+save(res_geom,file='res_geom.RData')
+
 #
 # reservoir_tidygraph = res_geom %>%
 #   st_set_geometry(NULL) %>%
