@@ -3,7 +3,7 @@
 \docType{data}
 \name{reservoir_geometry}
 \alias{reservoir_geometry}
-\title{Geometry of reservoirs in Ceará}
+\title{Geometry of reservoirs in Ceará after processing network topology}
 \format{
 An object of class \code{sf} (inherits from \code{tbl_df}, \code{tbl}, \code{data.frame}) with 22911 rows and 13 columns.
 }
@@ -14,7 +14,7 @@ https://global-surface-water.appspot.com/download
 data(reservoir_geometry)
 }
 \description{
-Geometry of reservoirs in Ceará
+Geometry of reservoirs in Ceará after processing network topology
 }
 \references{
 Jean-Francois Pekel, Andrew Cottam, Noel Gorelick, Alan S. Belward, High-resolution mapping of global surface water and its long-term changes. Nature 540, 418-422 (2016). (doi:10.1038/nature20584)

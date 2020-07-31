@@ -6,7 +6,7 @@
 \usage{
 allocate_reservoir_to_river(
   riv_i,
-  reservoirs = reservoir_geometry,
+  reservoirs = reservoir_geometry_raw,
   catchments = catchment_geometry
 )
 }
