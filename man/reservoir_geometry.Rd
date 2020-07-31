@@ -5,7 +5,7 @@
 \alias{reservoir_geometry}
 \title{Geometry of reservoirs in Ceará after processing network topology}
 \format{
-An object of class \code{sf} (inherits from \code{tbl_df}, \code{tbl}, \code{data.frame}) with 22911 rows and 13 columns.
+An object of class \code{sf} (inherits from \code{tbl_df}, \code{tbl}, \code{data.frame}) with 22911 rows and 6 columns.
 }
 \source{
 https://global-surface-water.appspot.com/download
