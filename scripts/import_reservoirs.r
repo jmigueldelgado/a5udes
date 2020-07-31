@@ -2,6 +2,7 @@ library(a5udes)
 library(dplyr)
 library(sf)
 library(tidygraph)
+library(ggraph)
 library(igraph)
 library(progress)
 library(furrr)
@@ -10,16 +11,23 @@ CE=osmdata::getbb(place_name='Ceará', format_out = "sf_polygon") %>% slice(1)
 
 res_geom=allocate_reservoir_to_river(river_geometry)
 reservoir_geometry=build_reservoir_topology(res_geom)
-save(reservoir_geometry,file='data/reservoir_geometry.RData')
+save(reservoir_geometry,file='data/reservoir_geometry.RData')reservoir_tidygraph
 
+
+reservoir_tidygraph = reservoir_geometry %>%
+  st_set_geometry(NULL) %>%
+  dplyr::select(id_jrc,res_down) %>%
+  filter(res_down>0) %>%
+  rename(to=id_jrc,from=res_down) %>%
+  as_tbl_graph
+save(reservoir_tidygraph,file='data/reservoir_tidygraph.RData')
+
+# reservoir_tidygraph %>% morph(to_local_neighborhood,2,order=1) %>%
+#   crystallise %>% .$graph %>% .[[1]] %>%
+#   ggraph(.)+geom_node_label(aes(label=name))+geom_edge_bend0()
 #
-#
-# reservoir_tidygraph = res_geom %>%
-#   st_set_geometry(NULL) %>%
-#   dplyr::select(id_jrc,res_down) %>%
-#   filter(res_down>0) %>%
-#   rename(to=id_jrc,from=res_down) %>%
-#   as_tbl_graph
+# reservoir_tidygraph %>% activate(nodes) %>% as_tibble %>% nrow
+
 #
 # res_geom_df=reservoir_geometry %>%
 #   st_set_geometry(NULL) %>%
