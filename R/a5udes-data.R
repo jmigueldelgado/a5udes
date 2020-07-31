@@ -1,4 +1,13 @@
-#' Geometry of reservoirs in Ceará
+#' Geometry of reservoirs in Ceará as imported from jrc
+#'
+#' @docType data
+#' @usage data(reservoir_geometry_raw)
+#'
+#' @references  Jean-Francois Pekel, Andrew Cottam, Noel Gorelick, Alan S. Belward, High-resolution mapping of global surface water and its long-term changes. Nature 540, 418-422 (2016). (doi:10.1038/nature20584)
+#' @source https://global-surface-water.appspot.com/download
+"reservoir_geometry_raw"
+
+#' Geometry of reservoirs in Ceará after processing network topology
 #'
 #' @docType data
 #' @usage data(reservoir_geometry)
@@ -6,7 +15,6 @@
 #' @references  Jean-Francois Pekel, Andrew Cottam, Noel Gorelick, Alan S. Belward, High-resolution mapping of global surface water and its long-term changes. Nature 540, 418-422 (2016). (doi:10.1038/nature20584)
 #' @source https://global-surface-water.appspot.com/download
 "reservoir_geometry"
-
 
 #' Catchments of Otto-level 12 for Ceará
 #'

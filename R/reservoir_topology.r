@@ -27,7 +27,7 @@ graph_reverse_direction <- function (graph) {
 #' @importFrom purrr map
 #' @importFrom furrr future_map
 #' @export
-allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry,catchments=catchment_geometry)
+allocate_reservoir_to_river <- function(riv_i,reservoirs=reservoir_geometry_raw,catchments=catchment_geometry)
 {
   print('preparing data for analysis and filtering out catchments and reservoir outside river network\n')
   otto_subset = st_intersects(catchments,st_union(riv_i),sparse=FALSE) %>% filter(catchments,.)
