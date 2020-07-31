@@ -8,23 +8,10 @@ library(furrr)
 
 CE=osmdata::getbb(place_name='Ceará', format_out = "sf_polygon") %>% slice(1)
 
-reservoir_geometry=allocate_reservoir_to_river(river_geometry)
+res_geom=allocate_reservoir_to_river(river_geometry)
+reservoir_geometry=build_reservoir_topology(res_geom)
 save(reservoir_geometry,file='data/reservoir_geometry.RData')
-#
-# res_geom=build_reservoir_topology(reservoir_geometry)
-# save(res_geom,file='res_geom.RData')
-#
-# res_geom_topo = reservoir_geometry %>%
-#   mutate(res_down=NA,downstreamness=NA,UPLAND_SKM=NA) %>%
-#   dplyr::select(id_jrc,`nearest river`,`distance to river`,res_down,downstreamness,UPLAND_SKM,area_max)
-#
-# # group after nearest river reach ID
-# res_geom_list=res_geom_topo %>% group_by(`nearest river`) %>% group_split(.keep=TRUE)
-# res_geom_i=res_geom_list[[1]]
-# riv_l=filter(river_geometry,HYRIV_ID==res_geom_i$`nearest river`[1])
-# res_geom_i$`nearest river`[1]
-#
-# river_geometry %>% head
+
 #
 #
 # reservoir_tidygraph = res_geom %>%
