@@ -36,7 +36,7 @@ riv_g2 %>% as_tibble %>% head
 riv_df=riv_g2 %>% activate(nodes) %>% as_tibble %>%
   dplyr::select(HYRIV_ID,riv_contr_area)
 
-g=reservoir_tidygraph %>%
+g=reservoir_graph %>%
   graph_reverse_direction %>%
   activate(nodes) %>%
   left_join(res_geom_df) %>%
