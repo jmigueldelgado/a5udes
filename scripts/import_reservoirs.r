@@ -14,13 +14,13 @@ reservoir_geometry=build_reservoir_topology(res_geom)
 save(reservoir_geometry,file='data/reservoir_geometry.RData')reservoir_tidygraph
 
 
-reservoir_tidygraph = reservoir_geometry %>%
+reservoir_graph = reservoir_geometry %>%
   st_set_geometry(NULL) %>%
   dplyr::select(id_jrc,res_down) %>%
   filter(res_down>0) %>%
   rename(to=id_jrc,from=res_down) %>%
   as_tbl_graph
-save(reservoir_tidygraph,file='data/reservoir_tidygraph.RData')
+save(reservoir_graph,file='data/reservoir_graph.RData')
 
 # reservoir_tidygraph %>% morph(to_local_neighborhood,2,order=1) %>%
 #   crystallise %>% .$graph %>% .[[1]] %>%

@@ -1,18 +1,30 @@
 #' Reverse the edge direction of a directed graph
-#' @param graph a igraph directed graph
+#' @param graph a igraph directed graph or a tbl_graph
 #' @return reversed a graph with reversed direction
 #' @importFrom igraph is.directed get.data.frame
+#' @importFrom tidygraph tbl_graph activate
+#' @importFrom dplyr mutate select as_tibble
 #' @export
 graph_reverse_direction <- function (graph) {
-  if (!is.directed(graph))
-    return(graph)
-  e <- get.data.frame(graph, what="edges")
-  ## swap "from" & "to"
-  neworder <- 1:length(e)
-  neworder[1:2] <- c(2,1)
-  e <- e[neworder]
-  names(e) <- names(e)[neworder]
-  reversed=graph.data.frame(e, vertices = get.data.frame(graph, what="vertices"))
+  if (is.tbl_graph(graph)) {
+    if(!with_graph(graph,graph_is_directed())){
+      stop('graph must be directed in order to be reversable')
+    }
+    edge_tbl=graph %>% activate(edges) %>% as_tibble %>% mutate(new_to=from, new_from=to) %>% mutate(from=new_from,to=new_to) %>% dplyr::select(from,to) %>% as_tibble
+    node_tbl=graph %>% activate(nodes) %>% as_tibble
+    reversed=tbl_graph(nodes=node_tbl,edges=edge_tbl)
+  } else if(is.igraph(graph)){
+    if (!is.directed(graph)){
+      stop('graph must be directed in order to be reversable')
+    }
+    e <- get.data.frame(graph, what="edges")
+    ## swap "from" & "to"
+    neworder <- 1:length(e)
+    neworder[1:2] <- c(2,1)
+    e <- e[neworder]
+    names(e) <- names(e)[neworder]
+    reversed=graph.data.frame(e, vertices = get.data.frame(graph, what="vertices"))
+  } else stop("input must be of class tbl_graph or igraph")
   return(reversed)
 }
 
@@ -148,7 +160,7 @@ build_reservoir_topology = function(res_geom){
     distinct(id_jrc,.keep_all=TRUE) %>%
     right_join(res_all,by='id_jrc') %>%
     mutate(res_down=coalesce(res_down.x,res_down.y)) %>%
-    select(id_jrc,res_down)
+    select(id_jrc,res_down,downstreamness)
 
   res_geom_out=left_join(res_geom,res_topo)
 
