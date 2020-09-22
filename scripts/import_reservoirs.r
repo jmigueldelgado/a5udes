@@ -11,7 +11,7 @@ CE=osmdata::getbb(place_name='Ceará', format_out = "sf_polygon") %>% slice(1)
 
 res_geom=allocate_reservoir_to_river(river_geometry)
 reservoir_geometry=build_reservoir_topology(res_geom)
-save(reservoir_geometry,file='data/reservoir_geometry.RData')reservoir_tidygraph
+save(reservoir_geometry,file='data/reservoir_geometry.RData')
 
 
 reservoir_tidygraph = reservoir_geometry %>%
@@ -21,6 +21,10 @@ reservoir_tidygraph = reservoir_geometry %>%
   rename(to=id_jrc,from=res_down) %>%
   as_tbl_graph
 save(reservoir_tidygraph,file='data/reservoir_tidygraph.RData')
+
+
+reservoir_graph = reservoir_tidygraph %>% as.igraph
+save(reservoir_graph,file='data/reservoir_graph.RData')
 
 # reservoir_tidygraph %>% morph(to_local_neighborhood,2,order=1) %>%
 #   crystallise %>% .$graph %>% .[[1]] %>%
