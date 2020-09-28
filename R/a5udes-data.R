@@ -80,3 +80,12 @@
 #' @source https://hydrosheds.org/downloads
 #' @source https://global-surface-water.appspot.com/download
 "reservoir_tidygraph"
+
+#' A graph of the class `tidygraph` containing flow direction derived from the HydroSHEDS hydrologically conditioned DEM in Ceará with a resolution of 30 arcsec.
+#'
+#' @docType data
+#' @usage data(flow_direction_tidygraph)
+#'
+#' @references Lehner, B., Verdin, K., Jarvis, A. (2008): New global hydrography derived from spaceborne elevation data. Eos, Transactions, AGU, 89(10): 93-94.
+#' @source https://hydrosheds.org/downloads
+"flow_direction_tidygraph"
