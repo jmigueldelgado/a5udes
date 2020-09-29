@@ -81,6 +81,29 @@
 #' @source https://global-surface-water.appspot.com/download
 "reservoir_tidygraph"
 
+#' A raster of the class `raster` where each cell contains an id.
+#' This raster should match th resolution and extents of the HydroSHEDS
+#' hydrologically conditioned DEM in Ceará with a resolution of 30 arcsec.
+#'
+#' @docType data
+#' @usage data(raster_flows_from)
+#'
+#' @references Lehner, B., Verdin, K., Jarvis, A. (2008): New global hydrography derived from spaceborne elevation data. Eos, Transactions, AGU, 89(10): 93-94.
+#' @source https://hydrosheds.org/downloads
+"raster_flows_from"
+
+#' A raster of the class `raster` where each cell contains the id
+#' of the destination cell that can be obtained in `flows_from`.
+#' This raster was derived from the HydroSHEDS hydrologically
+#' conditioned DEM in Ceará with a resolution of 30 arcsec.
+#'
+#' @docType data
+#' @usage data(raster_flows_to)
+#'
+#' @references Lehner, B., Verdin, K., Jarvis, A. (2008): New global hydrography derived from spaceborne elevation data. Eos, Transactions, AGU, 89(10): 93-94.
+#' @source https://hydrosheds.org/downloads
+"raster_flows_to"
+
 #' A graph of the class `tidygraph` containing flow direction derived from the HydroSHEDS hydrologically conditioned DEM in Ceará with a resolution of 30 arcsec.
 #'
 #' @docType data

@@ -1,3 +1,26 @@
+
+
+hydrosheds_condem_graph <- function(sf_polygon) {
+  sp_pol=as(sf_polygon,'Spatial')
+
+  flows_to_1=raster::crop(raster_flows_to,sp_pol)
+  if(length(flows_to_1)>1){
+    flows_to_1 <- raster::mask(flows_to_1, sp_pol)
+  }
+  flows_to_df=as.data.frame(flows_to_1,xy=TRUE) %>% rename(value=flows_to_1)
+
+  flows_from_df=as.data.frame(raster_flows_from,xy=TRUE) %>% rename(value=raster_flows_from)
+
+  edges = bind_cols(dplyr::select(flows_from_df,value) %>% rename(to=value),dplyr::select(flows_to_df,value) %>% rename(from=value)) %>%
+    filter(from>0)
+
+  nodes=tibble(value=union(edges$from,edges$to)) %>% left_join(flows_to_df)
+
+flow_direction_tidygraph=tbl_graph(nodes=nodes, edges = edges, directed = TRUE)
+
+
+}
+
 #' Reverse the edge direction of a directed graph
 #' @param graph a igraph directed graph
 #' @return reversed a graph with reversed direction

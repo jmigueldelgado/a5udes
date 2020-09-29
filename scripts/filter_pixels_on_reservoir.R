@@ -6,19 +6,48 @@ library(dplyr)
 library(tidygraph)
 library(ggraph)
 
-head(reservoir_geometry_raw)
+example_id=36304
+
 flows_from=raster("data/flows_from.tif")
 
-res1=as(reservoir_geometry_raw[1,],'Spatial')
+
+res1=as(filter(reservoir_geometry_raw,id_jrc==example_id),'Spatial')
+
+plot(res1)
 
 flows_from_1=raster::crop(flows_from,res1)
 
 
 if(length(flows_from_1)>1){
-  flows_from_1_mask <- raster::mask(flows_from_1, res1)
+  flows_from_1 <- raster::mask(flows_from_1, res1)
 }
 
-flows_from_1[1,1]
+raster_ids_in_reservoir=flows_from_1 %>% as.data.frame %>% filter(!is.na(flows_from))
+
+nodes_inside_reservoir=flow_direction_tidygraph %>%
+  activate('edges') %>%
+  filter(to %in% raster_ids_in_reservoir$flows_from) %>%
+  activate(nodes) %>%
+  mutate(G=centrality_degree()) %>%
+  filter(G>0)
+
+
+
+new_root=flows_from_1[1,1]
+
+split_tree = flow_direction_tidygraph %>%
+  activate('edges') %>%
+  filter(to!=new_root) %>% # dissect
+  activate('nodes') %>%
+  mutate(group=as.factor(group_components())) # attribute group label
+
+tree1=split_tree %>%
+  activate('nodes') %>%
+  group_by(group) %>%
+  filter(any(value==new_root)) %>%
+  ungroup
+
+
 
 
 
