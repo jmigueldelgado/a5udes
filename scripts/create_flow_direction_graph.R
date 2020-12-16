@@ -9,11 +9,11 @@ library(ggraph)
 
 raster_flows_to=raster("data/flows_to.tif")
 # save(raster_flows_to,file='data/raster_flows_to.RData')
-flows_to_df=as.data.frame(raster_flows_to,xy=TRUE) %>% rename(value=raster_flows_to)
+flows_to_df=as.data.frame(raster_flows_to,xy=TRUE) %>% rename(value=flows_to)
 
 raster_flows_from=raster("data/flows_from.tif")
 # save(raster_flows_from,file='data/raster_flows_from.RData')
-flows_from_df=as.data.frame(raster_flows_from,xy=TRUE) %>% rename(value=raster_flows_from)
+flows_from_df=as.data.frame(raster_flows_from,xy=TRUE) %>% rename(value=flows_from)
 
 
 
