@@ -22,9 +22,34 @@
 # }
 
 
-#' Get outlet of reservoir in hydrosheds condem raster
-#' @param id is the id of the reservoir as given in reservoir_geometry_raw in column id_jrc
-#' @return pixel_id that can be matched with flows_from.tiff or with flow_direction_tidygraph
+
+#' Obtain sink from graph. In case there are disjoint graphs the sink is considered to be of greatest topological order
+#' @param flow_graph is a tidygraph object ideally obtained from flow_graph_in_polygon
+#' @importFrom tidygraph node_is_sink node_topo_order mutate activate
+#' @importFrom dplyr as_tibble filter pull
+#' @export
+sink_from_graph <- function(flow_graph)
+{
+  nodes=flow_graph %>% activate(nodes) %>% as_tibble()
+  if(nrow(nodes)==1){
+    sink_id=nodes$name
+  } else {
+    sink_id = flow_graph %>%
+      mutate(sink=node_is_sink(),order=node_topo_order()) %>%
+      activate(nodes) %>%
+      as_tibble() %>%
+      filter(sink) %>%
+      filter(order==max(order)) %>%
+      pull(name)
+  }
+
+  return(sink_id)
+}
+
+
+#' Obtain flow graph inside reservoir polygon based on hydrosheds condem direction raster
+#' @param sf_polygon is the reservoir polygon in the same crs as the rasters `raster_flows_from` and `raster_flows_to`
+#' @return flow graph is a tidygraph where each node is a named pixel of the hydrosheds condem inside the input sf_polygon
 #' @importFrom raster raster writeRaster crop as.data.frame
 #' @importFrom dplyr filter rename tibble mutate pull as_tibble
 #' @importFrom tidygraph node_is_sink activate tbl_graph
@@ -32,24 +57,20 @@
 #' @importFrom sf st_write st_buffer
 #' @export
 
-outlet_in_condem <- function(res_id=34181){
-
-  res_sp = dplyr::filter(reservoir_geometry_raw,id_jrc==res_id) %>%
-    sf::st_buffer(500) %>%
-    as('Spatial')
-
-  flows_from_extent_i=raster::crop(raster_flows_from,res_sp)
-  raster_i=paste0('data/raster_',res_id,'.tif')
+flow_graph_in_polygon <- function(sf_polygon){
+  sp_pol=as(sf_polygon,'Spatial')
+  flows_from_extent_i=raster::crop(raster_flows_from,sp_pol)
+  raster_i=paste0('data/tmp_raster_crop.tif')
   raster::writeRaster(flows_from_extent_i,raster_i,format='GTiff',overwrite=TRUE)
 
-  flows_to_extent_i=raster::crop(raster_flows_to,res_sp)
+  flows_to_extent_i=raster::crop(raster_flows_to,sp_pol)
 
-  raster_to_i=paste0('data/raster_to_',res_id,'.tif')
+  raster_to_i=paste0('data/tmp_raster_to_crop.tif')
   raster::writeRaster(flows_to_extent_i,raster_to_i,format='GTiff',overwrite=TRUE)
 
 
-  poly_i=paste0('data/poly_',res_id,'.gpkg')
-  sf::st_write(filter(reservoir_geometry_raw,id_jrc==res_id),dsn=poly_i)
+  poly_i=paste0('data/tmp_polygon.gpkg')
+  sf::st_write(sf_polygon,dsn=poly_i)
 
   # call gdalwarp -of GTiff -cutline /home/delgado/proj/buhayra/buhayra/auxdata/wm_utm_demo.gpkg -cl wm_utm_demo -crop_to_cutline -wo CUTLINE_ALL_TOUCHED=TRUE /home/delgado/proj/a5udes/data/flows_from.tif /tmp/processing_8df776f0abd34f0781b0ac296178c1fe/c9e05e71e65d4d9591abe83ac4a1f273/OUTPUT.tif
   # with flag -wo CUTLINE_ALL_TOUCHED=TRUE
@@ -79,28 +100,24 @@ outlet_in_condem <- function(res_id=34181){
     filter(!is.na(node))
   nodes=tibble(name=pixels_from$node)
 
-  match_from=match(pixels_from$node,nodes$name)
-  match_to=match(pixels_to$node,nodes$name)
+  try(file.remove(raster_to_i))
+  try(file.remove(raster_i))
+  try(file.remove(poly_i))
+  try(file.remove(paste0(strsplit(raster_to_i,'[.]')[[1]][1],'_all_touched.tif')))
+  try(file.remove(paste0(strsplit(raster_i,'[.]')[[1]][1],'_all_touched.tif')))
 
+  if(nrow(pixels_from)==1){
+    flow_graph=tbl_graph(nodes=nodes, directed = TRUE,node_key='name')
+  } else {
+    match_from=match(pixels_from$node,nodes$name)
+    match_to=match(pixels_to$node,nodes$name)
 
-  edges = tibble(from=match_from[!is.na(match_to)],to=match_to[!is.na(match_to)])
+    edges = tibble(from=match_from[!is.na(match_to)],to=match_to[!is.na(match_to)])
 
-  flow_direction_i=tbl_graph(nodes=nodes, edges = edges, directed = TRUE,node_key='name')
+    flow_graph=tbl_graph(nodes=nodes, edges = edges, directed = TRUE,node_key='name')
+  }
 
-  outlet=flow_direction_i %>%
-    mutate(sink=node_is_sink()) %>%
-    activate(nodes) %>%
-    dplyr::as_tibble() %>%
-    filter(sink) %>%
-    pull(name)
-
-    try(file.remove(raster_to_i))
-    try(file.remove(raster_i))
-    try(file.remove(poly_i))
-    try(file.remove(paste0(strsplit(raster_to_i,'[.]')[[1]][1],'_all_touched.tif')))
-    try(file.remove(paste0(strsplit(raster_i,'[.]')[[1]][1],'_all_touched.tif')))
-
-  return(outlet)
+  return(flow_graph)
 }
 
 #' Reverse the edge direction of a directed graph
